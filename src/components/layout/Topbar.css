@@ -2,13 +2,13 @@
    TOPBAR STYLES
    ================================================ */
 .topbar {
-    height: 64px;
+    height: 56px;
     background: var(--surface-1);
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 1.5rem;
+    padding: 0 1.25rem;
     position: sticky;
     top: 0;
     z-index: 30;
@@ -18,6 +18,16 @@
 .topbar-left {
     display: flex;
     align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+}
+
+.topbar-breadcrumb {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+    white-space: nowrap;
 }
 
 .topbar-menu-btn {
@@ -64,9 +74,9 @@
 }
 
 .topbar-search-input:focus {
-    border-color: var(--primary);
+    border-color: var(--accent);
     background: var(--card-bg);
-  box-shadow: 0 0 0 3px rgba(var(--ring-rgb), 0.12);
+    box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.1);
 }
 
 .topbar-search-input::placeholder {

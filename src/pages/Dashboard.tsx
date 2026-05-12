@@ -81,16 +81,16 @@ export default function DashboardPage() {
 
     const statsCards = progress
         ? [
-            { label: 'Courses Enrolled', value: String(progress.coursesEnrolled), icon: BookOpen, color: '#8FA3C2', bg: 'rgba(143, 163, 194, 0.14)', change: '' },
-            { label: 'Pending Assignments', value: String(progress.pendingAssignments), icon: ClipboardList, color: '#9AA8BD', bg: 'rgba(154, 168, 189, 0.14)', change: progress.pendingAssignments > 0 ? 'Due' : '' },
-            { label: 'Avg Quiz Score', value: `${progress.avgQuizScorePercent}%`, icon: BarChart3, color: '#6EAFA4', bg: 'rgba(110, 175, 164, 0.14)', change: '' },
-            { label: 'Study Time', value: `${progress.studyTimeHours}h`, icon: Clock, color: '#8FA3C2', bg: 'rgba(143, 163, 194, 0.14)', change: 'Total' },
+            { label: 'Courses Enrolled', value: String(progress.coursesEnrolled), icon: BookOpen, color: '#0F766E', bg: 'rgba(15, 118, 110, 0.1)', change: '' },
+            { label: 'Pending Assignments', value: String(progress.pendingAssignments), icon: ClipboardList, color: '#9AA8BD', bg: 'rgba(154, 168, 189, 0.12)', change: progress.pendingAssignments > 0 ? 'Due' : '' },
+            { label: 'Avg Quiz Score', value: `${progress.avgQuizScorePercent}%`, icon: BarChart3, color: '#0F766E', bg: 'rgba(15, 118, 110, 0.1)', change: '' },
+            { label: 'Study Time', value: `${progress.studyTimeHours}h`, icon: Clock, color: '#9AA8BD', bg: 'rgba(154, 168, 189, 0.12)', change: 'Total' },
         ]
         : [
-            { label: 'Courses Enrolled', value: '–', icon: BookOpen, color: '#8FA3C2', bg: 'rgba(143, 163, 194, 0.14)', change: '' },
-            { label: 'Pending Assignments', value: '–', icon: ClipboardList, color: '#9AA8BD', bg: 'rgba(154, 168, 189, 0.14)', change: '' },
-            { label: 'Avg Quiz Score', value: '–', icon: BarChart3, color: '#6EAFA4', bg: 'rgba(110, 175, 164, 0.14)', change: '' },
-            { label: 'Study Time', value: '–', icon: Clock, color: '#8FA3C2', bg: 'rgba(143, 163, 194, 0.14)', change: '' },
+            { label: 'Courses Enrolled', value: '–', icon: BookOpen, color: '#0F766E', bg: 'rgba(15, 118, 110, 0.1)', change: '' },
+            { label: 'Pending Assignments', value: '–', icon: ClipboardList, color: '#9AA8BD', bg: 'rgba(154, 168, 189, 0.12)', change: '' },
+            { label: 'Avg Quiz Score', value: '–', icon: BarChart3, color: '#0F766E', bg: 'rgba(15, 118, 110, 0.1)', change: '' },
+            { label: 'Study Time', value: '–', icon: Clock, color: '#9AA8BD', bg: 'rgba(154, 168, 189, 0.12)', change: '' },
         ];
 
     return (
