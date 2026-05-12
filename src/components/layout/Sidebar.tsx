@@ -3,26 +3,41 @@ import { NavLink, useLocation } from 'react-router-dom';
 import {
     LayoutDashboard, BookOpen, MessageSquare, Code2, FlaskConical,
     BarChart3, Settings, ChevronLeft, ChevronRight,
-    GraduationCap, Eye, Flame, ShieldCheck, Layers, Network, Target, Swords
+    GraduationCap, Eye, ShieldCheck, Layers, Network, Target, Swords
 } from 'lucide-react';
 
 const IS_ADMIN = !!import.meta.env.VITE_ADMIN_TOKEN;
 import './Sidebar.css';
 import { LogoIcon } from '../LogoIcon';
 
-const navItems = [
-    { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { path: '/courses', label: 'My Courses', icon: BookOpen },
-    { path: '/chat', label: 'AI Tutor Chat', icon: MessageSquare, badge: 'AI' },
-    { path: '/quiz', label: 'Exam Practice', icon: GraduationCap },
-    { path: '/code-lab', label: 'Coding Lab', icon: Code2 },
-    { path: '/videos', label: 'Video Library', icon: Eye },
-    { path: '/progress', label: 'Analytics', icon: BarChart3 },
-    { path: '/notes', label: 'Study Notes', icon: FlaskConical },
-    { path: '/flashcards', label: 'Flashcards', icon: Layers, badge: 'AI' },
-    { path: '/concept-map', label: 'Concept Map', icon: Network, badge: 'AI' },
-    { path: '/exam-prep', label: 'Exam Prep', icon: Target, badge: 'AI' },
-    { path: '/socratic', label: 'Socratic Mode', icon: Swords, badge: 'AI' },
+const navGroups = [
+    {
+        label: 'Learn',
+        items: [
+            { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+            { path: '/courses', label: 'Courses', icon: BookOpen },
+            { path: '/videos', label: 'Video Library', icon: Eye },
+            { path: '/notes', label: 'Notes', icon: FlaskConical },
+        ],
+    },
+    {
+        label: 'Practice',
+        items: [
+            { path: '/chat', label: 'AI Tutor', icon: MessageSquare },
+            { path: '/quiz', label: 'Quizzes', icon: GraduationCap },
+            { path: '/code-lab', label: 'Coding Lab', icon: Code2 },
+            { path: '/flashcards', label: 'Flashcards', icon: Layers },
+            { path: '/socratic', label: 'Socratic Mode', icon: Swords },
+        ],
+    },
+    {
+        label: 'Insights',
+        items: [
+            { path: '/progress', label: 'Analytics', icon: BarChart3 },
+            { path: '/concept-map', label: 'Concept Map', icon: Network },
+            { path: '/exam-prep', label: 'Exam Prep', icon: Target },
+        ],
+    },
 ];
 
 const bottomItems = [
@@ -53,38 +68,33 @@ export default function Sidebar() {
 
             {/* Navigation */}
             <nav className="sidebar-nav">
-                <div className="sidebar-nav-group">
-                    {navItems.map((item) => {
-                        const Icon = item.icon;
-                        const isActive = location.pathname.startsWith(item.path);
-                        return (
-                            <NavLink
-                                key={item.path}
-                                to={item.path}
-                                className={`sidebar-link ${isActive ? 'active' : ''}`}
-                                title={collapsed ? item.label : undefined}
-                            >
-                                <Icon size={20} />
-                                {!collapsed && <span>{item.label}</span>}
-                                {!collapsed && item.badge && (
-                                    <span className="sidebar-badge">{item.badge}</span>
-                                )}
-                            </NavLink>
-                        );
-                    })}
+                <div style={{ flex: 1, overflow: 'hidden auto' }}>
+                    {navGroups.map((group) => (
+                        <div key={group.label} className="sidebar-nav-group">
+                            {!collapsed && (
+                                <span className="sidebar-section-label">{group.label}</span>
+                            )}
+                            {group.items.map((item) => {
+                                const Icon = item.icon;
+                                const isActive = location.pathname.startsWith(item.path);
+                                return (
+                                    <NavLink
+                                        key={item.path}
+                                        to={item.path}
+                                        className={`sidebar-link ${isActive ? 'active' : ''}`}
+                                        title={collapsed ? item.label : undefined}
+                                    >
+                                        <Icon size={18} />
+                                        {!collapsed && <span>{item.label}</span>}
+                                    </NavLink>
+                                );
+                            })}
+                        </div>
+                    ))}
                 </div>
 
                 {/* Bottom nav */}
                 <div className="sidebar-nav-bottom">
-                    {!collapsed && (
-                        <div className="sidebar-study-card">
-                            <div className="sidebar-study-icon"><Flame size={18} /></div>
-                            <div>
-                                <p className="sidebar-study-title">5 Day Streak!</p>
-                                <p className="sidebar-study-sub">Keep learning daily</p>
-                            </div>
-                        </div>
-                    )}
                     {bottomItems.map((item) => {
                         const Icon = item.icon;
                         const isActive = location.pathname.startsWith(item.path);
