@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { RefreshCw, CheckCircle2, AlertTriangle, ArrowRight, Database } from 'lucide-react';
+import { RefreshCw, CheckCircle2, AlertTriangle, ArrowRight, Database, ArrowLeft } from 'lucide-react';
 import './Admin.css';
 
 const ADMIN_TOKEN = import.meta.env.VITE_ADMIN_TOKEN || 'saarthi-admin-2026';
@@ -65,9 +65,14 @@ export default function Admin() {
     return (
         <div className="admin-page">
             <div className="admin-header">
-                <div>
-                    <h1>Knowledge Base</h1>
-                    <p>Manage source documents and vector indexes for all RAG agents</p>
+                <div className="admin-header-left">
+                    <button className="admin-back-btn" onClick={() => navigate('/dashboard')}>
+                        <ArrowLeft size={14} /> Dashboard
+                    </button>
+                    <div>
+                        <h1>Knowledge Base</h1>
+                        <p>Manage source documents and vector indexes for all RAG agents</p>
+                    </div>
                 </div>
                 <button
                     className="admin-refresh-btn"
