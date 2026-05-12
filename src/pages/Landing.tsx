@@ -125,7 +125,7 @@ export default function LandingPage() {
                         </p>
                         <div className="landing-hero-ctas">
                             <button className="btn btn-primary btn-lg" onClick={() => navigate('/signup')}>
-                                <Sparkles size={18} />
+                                <ArrowRight size={18} />
                                 Start Learning Free
                             </button>
                             <button className="btn btn-secondary btn-lg" onClick={() => navigate('/login')}>
