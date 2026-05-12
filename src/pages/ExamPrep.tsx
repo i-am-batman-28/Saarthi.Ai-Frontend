@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Target, Loader2, Sparkles, Clock, TrendingUp, AlertTriangle, CheckCircle2, BookOpen, MessageSquare } from 'lucide-react';
 import { api } from '../lib/api';
 import { useNavigate } from 'react-router-dom';
+import { usePageTitle } from '../lib/usePageTitle';
 import './ExamPrep.css';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -88,6 +89,7 @@ function TopicRow({ t, onStudy }: { t: ExamPredictionTopic; onStudy: (topic: str
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function ExamPrepPage() {
+    usePageTitle('Exam Prep');
     const navigate = useNavigate();
     const [courseTitle, setCourseTitle] = useState('');
     const [hoursUntilExam, setHoursUntilExam] = useState(72);

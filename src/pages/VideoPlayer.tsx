@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Play, Pause, RotateCcw, Volume2, Maximize, FileText, CheckCircle2, ChevronRight, Clock, Plus } from 'lucide-react';
 import { api, type VideoResponse, type VideoNoteResponse } from '../lib/api';
+import { usePageTitle } from '../lib/usePageTitle';
 import './VideoPlayer.css';
 
 interface Chapter {
@@ -31,6 +32,7 @@ export default function VideoPlayerPage() {
     const videoRef = useRef<HTMLVideoElement>(null);
 
     const [video, setVideo] = useState<VideoResponse | null>(null);
+    usePageTitle(video?.title ?? 'Video Player');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [notes, setNotes] = useState<VideoNoteResponse[]>([]);
@@ -40,6 +42,7 @@ export default function VideoPlayerPage() {
     const [playing, setPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [volume, setVolume] = useState(1);
+    const [playbackRate, setPlaybackRate] = useState(1);
 
     const isEmbed = Boolean(video?.embedUrl);
     const chapters: Chapter[] = video ? parseChapters(video.chaptersJson) : [];
@@ -84,10 +87,24 @@ export default function VideoPlayerPage() {
         }
     };
 
+    const handleLoadedMetadata = () => {
+        const saved = localStorage.getItem(`saarthi_vpos_${id}`);
+        if (saved && videoRef.current) {
+            const t = parseFloat(saved);
+            if (t > 5 && t < (videoRef.current.duration - 10)) {
+                videoRef.current.currentTime = t;
+            }
+        }
+    };
+
     const handleTimeUpdate = () => {
         if (videoRef.current) {
-            setCurrentTime(videoRef.current.currentTime);
-            setNoteTimeSeconds(Math.floor(videoRef.current.currentTime));
+            const t = videoRef.current.currentTime;
+            setCurrentTime(t);
+            setNoteTimeSeconds(Math.floor(t));
+            if (id && Math.floor(t) % 5 === 0) {
+                localStorage.setItem(`saarthi_vpos_${id}`, String(t));
+            }
         }
     };
 
@@ -122,8 +139,13 @@ export default function VideoPlayerPage() {
 
     if (loading) {
         return (
-            <div className="video-player-page">
-                <div className="video-loading-state">Loading video…</div>
+            <div className="video-player-page" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div className="skeleton" style={{ height: '2rem', width: '200px', borderRadius: '0.5rem' }} />
+                <div className="skeleton" style={{ height: 'clamp(280px, 50vh, 480px)', borderRadius: '0.75rem' }} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <div className="skeleton" style={{ height: '1.25rem', width: '60%', borderRadius: '0.375rem' }} />
+                    <div className="skeleton" style={{ height: '0.875rem', width: '40%', borderRadius: '0.375rem' }} />
+                </div>
             </div>
         );
     }
@@ -166,6 +188,7 @@ export default function VideoPlayerPage() {
                                 src={video.url}
                                 className="video-element"
                                 onTimeUpdate={handleTimeUpdate}
+                                onLoadedMetadata={handleLoadedMetadata}
                                 onClick={togglePlay}
                             />
                             <div className="video-controls-overlay">
@@ -210,6 +233,19 @@ export default function VideoPlayerPage() {
                                         </span>
                                     </div>
                                     <div className="controls-right">
+                                        <select
+                                            className="speed-select"
+                                            value={playbackRate}
+                                            onChange={(e) => {
+                                                const r = parseFloat(e.target.value);
+                                                setPlaybackRate(r);
+                                                if (videoRef.current) videoRef.current.playbackRate = r;
+                                            }}
+                                        >
+                                            {[0.5, 0.75, 1, 1.25, 1.5, 2].map(r => (
+                                                <option key={r} value={r}>{r}x</option>
+                                            ))}
+                                        </select>
                                         <button type="button" className="control-btn" onClick={() => videoRef.current?.requestFullscreen()}><Maximize size={18} /></button>
                                     </div>
                                 </div>

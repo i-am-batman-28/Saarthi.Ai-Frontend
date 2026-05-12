@@ -4,6 +4,7 @@ import {
     Flame, Users, Loader2, Medal,
 } from 'lucide-react';
 import { api, type ProgressResponse } from '../lib/api';
+import { usePageTitle } from '../lib/usePageTitle';
 import './Progress.css';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -117,13 +118,16 @@ function PeerComparisonWidget() {
     const [data, setData] = useState<PeerComparison | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [retryCount, setRetryCount] = useState(0);
 
     useEffect(() => {
+        setLoading(true);
+        setError('');
         api.get<PeerComparison>('/quizzes/peer-comparison')
             .then(setData)
             .catch(e => setError(e?.message || 'Could not load peer data.'))
             .finally(() => setLoading(false));
-    }, []);
+    }, [retryCount]);
 
     const rankLabel = (p: number) =>
         p >= 90 ? 'Top 10%' : p >= 75 ? 'Top 25%' : p >= 50 ? 'Above Average' : p >= 25 ? 'Below Average' : 'Bottom 25%';
@@ -142,10 +146,11 @@ function PeerComparisonWidget() {
             )}
 
             {error && !loading && (
-                <div className="peer-empty">
-                    <Medal size={36} style={{ color: 'var(--text-muted)' }} />
-                    <p>Complete at least one quiz to unlock peer comparison.</p>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{error}</span>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', padding: '3rem', textAlign: 'center' }}>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{error}</p>
+                    <button className="btn btn-primary btn-sm" onClick={() => setRetryCount(c => c + 1)}>
+                        Try again
+                    </button>
                 </div>
             )}
 
@@ -198,15 +203,20 @@ function PeerComparisonWidget() {
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function ProgressPage() {
+    usePageTitle('Progress');
     const [progress, setProgress] = useState<ProgressResponse | null>(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [retryCount, setRetryCount] = useState(0);
 
     useEffect(() => {
+        setLoading(true);
+        setError(null);
         api.get<ProgressResponse>('/users/me/progress')
             .then(setProgress)
-            .catch(() => {})
+            .catch(e => setError(e?.message || 'Could not load progress data.'))
             .finally(() => setLoading(false));
-    }, []);
+    }, [retryCount]);
 
     const val = (v: number | string | undefined, fallback = '–') =>
         loading ? '–' : v !== undefined ? String(v) : fallback;
@@ -217,6 +227,15 @@ export default function ProgressPage() {
                 <h1>Learning Analytics</h1>
                 <p>Track your progress across all subjects</p>
             </div>
+
+            {error && !progress && (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', padding: '3rem', textAlign: 'center' }}>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{error}</p>
+                    <button className="btn btn-primary btn-sm" onClick={() => setRetryCount(c => c + 1)}>
+                        Try again
+                    </button>
+                </div>
+            )}
 
             {/* Stats Row */}
             <div className="progress-stats animate-fade-in delay-100">

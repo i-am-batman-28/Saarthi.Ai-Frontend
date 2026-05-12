@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { LogoIcon } from '../../components/LogoIcon';
+import { usePageTitle } from '../../lib/usePageTitle';
 import './Auth.css';
 
 export default function ForgotPasswordPage() {
+    usePageTitle('Reset Password');
     const [email, setEmail] = useState('');
     const [sent, setSent] = useState(false);
     const [loading, setLoading] = useState(false);

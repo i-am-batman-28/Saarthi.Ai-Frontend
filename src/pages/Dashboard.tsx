@@ -6,6 +6,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/auth.store';
 import { api, type ProgressResponse, type EnrollmentWithCourseResponse, type PaginatedResponse } from '../lib/api';
+import { usePageTitle } from '../lib/usePageTitle';
 import EmptyState from '../components/EmptyState';
 import './Dashboard.css';
 
@@ -23,6 +24,7 @@ interface StudyPlanDay { day: string; sessions: string[]; totalHours: number; }
 interface StudyPlan { weekPlan: StudyPlanDay[]; summary: string; priorityTopics: string[]; generatedAt: string; }
 
 export default function DashboardPage() {
+    usePageTitle('Dashboard');
     const { user } = useAuthStore();
     const navigate = useNavigate();
     const [progress, setProgress] = useState<ProgressResponse | null>(null);

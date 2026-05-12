@@ -4,6 +4,7 @@ import {
     RotateCcw, CheckCircle2, XCircle, Minus, BookOpen, Brain,
 } from 'lucide-react';
 import { api } from '../lib/api';
+import { usePageTitle } from '../lib/usePageTitle';
 import './Flashcards.css';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -237,6 +238,7 @@ function CardFlipper({ cards, topic, onDone }: { cards: Flashcard[]; topic: stri
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function FlashcardsPage() {
+    usePageTitle('Flashcards');
     const [deck, setDeck] = useState<FlashcardDeckResponse | null>(null);
 
     return (

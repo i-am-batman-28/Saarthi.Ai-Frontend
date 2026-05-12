@@ -6,6 +6,7 @@ import {
 import { useAuthStore } from '../../stores/auth.store';
 import { useSettingsStore } from '../../stores/settings.store';
 import { getInitials } from '../../lib/utils';
+import { usePageTitle } from '../../lib/usePageTitle';
 import './Settings.css';
 
 const tabs = [
@@ -16,6 +17,7 @@ const tabs = [
 ];
 
 export default function SettingsPage() {
+    usePageTitle('Settings');
     const { user, logout } = useAuthStore();
     const { theme, fontSize, setTheme, setFontSize } = useSettingsStore();
     const [activeTab, setActiveTab] = useState('profile');

@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import {
     Code2, Award, BookOpen, Brain, BarChart3,
     Play, ArrowRight, CheckCircle2, ChevronRight,
@@ -313,12 +313,16 @@ export default function LandingPage() {
                             <h4>Support</h4>
                             <a href="#">Help Center</a>
                             <a href="#">FAQs</a>
-                            <a href="#">Privacy Policy</a>
-                            <a href="#">Terms of Service</a>
+                            <Link to="/legal/privacy">Privacy Policy</Link>
+                            <Link to="/legal/terms">Terms of Service</Link>
                         </div>
                     </div>
                     <div className="landing-footer-bottom">
                         <p>© 2026 Saarthi.ai. All rights reserved.</p>
+                        <div style={{ display: 'flex', justifyContent: 'center', gap: '1.5rem', flexWrap: 'wrap', marginTop: '0.5rem', fontSize: '0.8125rem' }}>
+                            <Link to="/legal/terms" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Terms of Service</Link>
+                            <Link to="/legal/privacy" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Privacy Policy</Link>
+                        </div>
                     </div>
                 </div>
             </footer>

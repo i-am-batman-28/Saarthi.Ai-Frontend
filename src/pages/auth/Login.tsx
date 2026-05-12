@@ -4,9 +4,11 @@ import { Mail, Lock, Eye, EyeOff, Sparkles, Brain, Code2, BarChart3, GraduationC
 import { useAuthStore } from '../../stores/auth.store';
 import { LogoIcon } from '../../components/LogoIcon';
 import { acceptPendingInvite } from '../JoinCourse';
+import { usePageTitle } from '../../lib/usePageTitle';
 import './Auth.css';
 
 export default function LoginPage() {
+    usePageTitle('Sign In');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -174,6 +176,12 @@ export default function LoginPage() {
 
                     <p className="auth-footer-text">
                         Don't have an account? <Link to="/signup" className="auth-link-bold">Sign Up</Link>
+                    </p>
+                    <p style={{ textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '1rem' }}>
+                        By continuing, you agree to our{' '}
+                        <Link to="/legal/terms" style={{ color: 'var(--text-muted)', textDecoration: 'underline' }}>Terms</Link>
+                        {' '}and{' '}
+                        <Link to="/legal/privacy" style={{ color: 'var(--text-muted)', textDecoration: 'underline' }}>Privacy Policy</Link>.
                     </p>
                 </div>
             </div>

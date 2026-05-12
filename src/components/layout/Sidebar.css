@@ -284,10 +284,11 @@
 
 @media (max-width: 768px) {
     .sidebar {
-        transform: translateX(-100%);
+        display: none;
     }
 
     .sidebar.mobile-open {
+        display: flex;
         transform: translateX(0);
     }
 }

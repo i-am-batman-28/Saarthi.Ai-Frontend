@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Search, Plus, FileText, Clock, Tag, BookOpen, Grid, List, X, Pencil, Trash2, Save } from 'lucide-react';
 import { api, type NoteResponse, type PaginatedResponse } from '../lib/api';
+import { usePageTitle } from '../lib/usePageTitle';
 import Pagination from '../components/Pagination';
 import ConfirmModal from '../components/ConfirmModal';
 import './Notes.css';
@@ -8,6 +9,7 @@ import './Notes.css';
 const PAGE_SIZE = 20;
 
 export default function NotesPage() {
+    usePageTitle('My Notes');
     const [search, setSearch] = useState('');
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [notes, setNotes] = useState<NoteResponse[]>([]);
@@ -15,6 +17,7 @@ export default function NotesPage() {
     const [offset, setOffset] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [retryCount, setRetryCount] = useState(0);
     const [showModal, setShowModal] = useState(false);
     const [editingNote, setEditingNote] = useState<NoteResponse | null>(null);
     const [saving, setSaving] = useState(false);
@@ -31,7 +34,7 @@ export default function NotesPage() {
             })
             .catch((e) => setError(e instanceof Error ? e.message : 'Failed to load notes'))
             .finally(() => setLoading(false));
-    }, [offset]);
+    }, [offset, retryCount]);
 
     useEffect(() => {
         let cancelled = false;
@@ -122,7 +125,7 @@ export default function NotesPage() {
                     <button type="button" className="btn btn-primary" onClick={openCreate}><Plus size={16} /> New Note</button>
                 </div>
             </div>
-            {error && <div className="notes-error" role="alert">{error}</div>}
+            {error && notes.length > 0 && <div className="notes-error" role="alert">{error}</div>}
             <div className="notes-search animate-fade-in delay-100">
                 <div className="courses-search" style={{ maxWidth: '400px' }}>
                     <Search size={18} />
@@ -130,8 +133,19 @@ export default function NotesPage() {
                 </div>
             </div>
 
-            {loading && notes.length === 0 ? (
-                <div className="notes-loading">Loading notes…</div>
+            {error && !loading && notes.length === 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', padding: '3rem', textAlign: 'center' }}>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{error}</p>
+                    <button className="btn btn-primary btn-sm" onClick={() => setRetryCount(c => c + 1)}>
+                        Try again
+                    </button>
+                </div>
+            ) : loading && notes.length === 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', padding: '1rem 0' }}>
+                    {Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} className="skeleton" style={{ height: '80px', borderRadius: '0.75rem' }} />
+                    ))}
+                </div>
             ) : filtered.length === 0 ? (
                 <div className="notes-empty animate-fade-in delay-100">
                     <div className="notes-empty-icon"><FileText size={48} /></div>

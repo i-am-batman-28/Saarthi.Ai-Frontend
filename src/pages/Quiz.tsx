@@ -4,6 +4,7 @@ import {
     Sparkles, Loader2, RotateCcw, Brain, Target, BookOpen,
 } from 'lucide-react';
 import { api } from '../lib/api';
+import { usePageTitle } from '../lib/usePageTitle';
 import './Quiz.css';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -339,6 +340,7 @@ function QuizPlayer({ title, questions, weakAreas = [], onRetake }: QuizPlayerPr
 type Mode = 'choose' | 'static' | 'adaptive-gen' | 'adaptive-play';
 
 export default function QuizPage() {
+    usePageTitle('Quiz');
     const [mode, setMode] = useState<Mode>('choose');
     const [adaptiveQuiz, setAdaptiveQuiz] = useState<AdaptiveQuizResponse | null>(null);
 
