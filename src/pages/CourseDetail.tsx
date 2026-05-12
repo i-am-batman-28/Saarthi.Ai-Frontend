@@ -239,6 +239,9 @@ export default function CourseDetailPage() {
     const [inviteResult, setInviteResult] = useState<{ code: string; link: string } | null>(null);
     const [inviteCopied, setInviteCopied] = useState(false);
     const [inviteError, setInviteError] = useState('');
+    const [csvResults, setCsvResults] = useState<{ email: string; code: string; error?: string }[]>([]);
+    const [csvLoading, setCsvLoading] = useState(false);
+    const [csvCopiedIdx, setCsvCopiedIdx] = useState<number | null>(null);
 
     // Join state (student)
     const [showJoinModal, setShowJoinModal] = useState(false);
@@ -453,6 +456,56 @@ export default function CourseDetailPage() {
             setInviteCopied(true);
             setTimeout(() => setInviteCopied(false), 2000);
         });
+    };
+
+    const handleCsvUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !courseId) return;
+        e.target.value = '';
+        const text = await file.text();
+        // Parse all cells that look like email addresses from any CSV layout
+        const emails = Array.from(
+            new Set(
+                text.split(/[\r\n,;\t]+/)
+                    .map((s) => s.replace(/^["'\s]+|["'\s]+$/g, '').toLowerCase())
+                    .filter((s) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s))
+            )
+        );
+        if (emails.length === 0) {
+            setInviteError('No valid email addresses found in the CSV.');
+            return;
+        }
+        setInviteError('');
+        setCsvLoading(true);
+        setCsvResults([]);
+        const results: { email: string; code: string; error?: string }[] = [];
+        for (const email of emails) {
+            try {
+                const res = await api.post<{ inviteCode: string; inviteLink: string }>(
+                    `/courses/${courseId}/invite`, { email }
+                );
+                results.push({ email, code: res.inviteCode });
+            } catch (err) {
+                results.push({ email, code: '', error: err instanceof Error ? err.message : 'Failed' });
+            }
+        }
+        setCsvResults(results);
+        setCsvLoading(false);
+    };
+
+    const handleCopyCsvCode = (code: string, idx: number) => {
+        navigator.clipboard.writeText(code).then(() => {
+            setCsvCopiedIdx(idx);
+            setTimeout(() => setCsvCopiedIdx(null), 2000);
+        });
+    };
+
+    const handleCopyAllCsv = () => {
+        const text = csvResults
+            .filter((r) => r.code)
+            .map((r) => `${r.email}\t${r.code}`)
+            .join('\n');
+        navigator.clipboard.writeText(text);
     };
 
     const handleJoinCourse = async () => {
@@ -971,52 +1024,95 @@ export default function CourseDetailPage() {
 
             {/* ── Invite Students Modal (teacher) ── */}
             {showInviteModal && (
-                <div className="cd-modal-overlay" onClick={() => setShowInviteModal(false)}>
-                    <div className="cd-modal animate-scale-in" onClick={(e) => e.stopPropagation()}>
+                <div className="cd-modal-overlay" onClick={() => { setShowInviteModal(false); setCsvResults([]); }}>
+                    <div className="cd-modal cd-modal-wide animate-scale-in" onClick={(e) => e.stopPropagation()}>
                         <div className="cd-modal-header">
                             <h2><Mail size={18} /> Invite Students</h2>
-                            <button className="cd-modal-close" onClick={() => setShowInviteModal(false)}><X size={20} /></button>
+                            <button className="cd-modal-close" onClick={() => { setShowInviteModal(false); setCsvResults([]); }}><X size={20} /></button>
                         </div>
                         <div className="cd-modal-body">
-                            <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
-                                Enter the student's email to generate an invite link. They'll use the code to join this course.
-                                Use <strong>*</strong> to create an open link anyone can join.
-                            </p>
-                            <div className="cd-modal-field">
-                                <label>Student Email</label>
-                                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                    <input
-                                        className="input"
-                                        placeholder="student@example.com or *"
-                                        value={inviteEmail}
-                                        onChange={(e) => setInviteEmail(e.target.value)}
-                                        onKeyDown={(e) => e.key === 'Enter' && handleSendInvite()}
-                                    />
-                                    <button className="btn btn-primary" onClick={handleSendInvite} disabled={inviteSending || !inviteEmail.trim()}>
-                                        {inviteSending ? 'Sending…' : 'Generate'}
-                                    </button>
-                                </div>
-                            </div>
-                            {inviteError && <p style={{ color: 'var(--error)', fontSize: '0.8125rem' }}>{inviteError}</p>}
-                            {inviteResult && (
-                                <div className="cd-invite-result">
-                                    <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
-                                        Share this code with the student:
-                                    </p>
-                                    <div className="cd-invite-code-row">
-                                        <span className="cd-invite-code">{inviteResult.code}</span>
-                                        <button className="btn btn-outline btn-sm" onClick={() => handleCopyInviteCode(inviteResult.code)}>
-                                            {inviteCopied ? <><Check size={14} /> Copied!</> : <><Copy size={14} /> Copy</>}
+
+                            {/* Single invite */}
+                            <div className="cd-invite-section">
+                                <p className="cd-invite-section-label">Single invite</p>
+                                <div className="cd-modal-field">
+                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        <input
+                                            className="input"
+                                            placeholder="student@example.com  or  * (open link)"
+                                            value={inviteEmail}
+                                            onChange={(e) => setInviteEmail(e.target.value)}
+                                            onKeyDown={(e) => e.key === 'Enter' && handleSendInvite()}
+                                        />
+                                        <button className="btn btn-primary" onClick={handleSendInvite} disabled={inviteSending || !inviteEmail.trim()}>
+                                            {inviteSending ? 'Sending…' : 'Generate'}
                                         </button>
                                     </div>
-                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
-                                        Link expires in 72 hours. Student uses this at Courses → Join with Code.
-                                    </p>
+                                </div>
+                                {inviteResult && (
+                                    <div className="cd-invite-result">
+                                        <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Share this code:</p>
+                                        <div className="cd-invite-code-row">
+                                            <span className="cd-invite-code">{inviteResult.code}</span>
+                                            <button className="btn btn-outline btn-sm" onClick={() => handleCopyInviteCode(inviteResult.code)}>
+                                                {inviteCopied ? <><Check size={14} /> Copied!</> : <><Copy size={14} /> Copy</>}
+                                            </button>
+                                        </div>
+                                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                                            Expires in 72 hours. Student joins via People tab → Join with Code.
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Divider */}
+                            <div className="cd-invite-divider"><span>or</span></div>
+
+                            {/* CSV bulk invite */}
+                            <div className="cd-invite-section">
+                                <p className="cd-invite-section-label">Bulk invite via CSV</p>
+                                <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>
+                                    Upload a CSV file — any column containing email addresses will be detected automatically.
+                                </p>
+                                <label className="cd-csv-upload-btn">
+                                    <input type="file" accept=".csv,.txt" onChange={handleCsvUpload} style={{ display: 'none' }} />
+                                    <Copy size={15} /> {csvLoading ? `Generating ${csvResults.length} codes…` : 'Upload CSV'}
+                                </label>
+                            </div>
+
+                            {inviteError && <p style={{ color: 'var(--error)', fontSize: '0.8125rem', marginTop: '0.5rem' }}>{inviteError}</p>}
+
+                            {/* CSV results table */}
+                            {csvResults.length > 0 && (
+                                <div className="cd-csv-results">
+                                    <div className="cd-csv-results-header">
+                                        <span>{csvResults.filter(r => r.code).length} codes generated</span>
+                                        <button className="btn btn-outline btn-sm" onClick={handleCopyAllCsv}>
+                                            <Copy size={13} /> Copy all
+                                        </button>
+                                    </div>
+                                    <div className="cd-csv-table">
+                                        {csvResults.map((r, i) => (
+                                            <div key={i} className={`cd-csv-row ${r.error ? 'cd-csv-row-error' : ''}`}>
+                                                <span className="cd-csv-email">{r.email}</span>
+                                                {r.error ? (
+                                                    <span className="cd-csv-err">{r.error}</span>
+                                                ) : (
+                                                    <>
+                                                        <span className="cd-invite-code cd-invite-code-sm">{r.code}</span>
+                                                        <button className="btn btn-outline btn-sm" onClick={() => handleCopyCsvCode(r.code, i)}>
+                                                            {csvCopiedIdx === i ? <Check size={13} /> : <Copy size={13} />}
+                                                        </button>
+                                                    </>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             )}
                         </div>
                         <div className="cd-modal-footer">
-                            <button className="btn btn-outline" onClick={() => setShowInviteModal(false)}>Done</button>
+                            <button className="btn btn-outline" onClick={() => { setShowInviteModal(false); setCsvResults([]); }}>Done</button>
                         </div>
                     </div>
                 </div>
