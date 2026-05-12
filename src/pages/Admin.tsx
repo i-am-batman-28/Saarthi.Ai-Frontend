@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { RefreshCw, CheckCircle2, AlertTriangle, ArrowRight, Database } from 'lucide-react';
 import './Admin.css';
 
 const ADMIN_TOKEN = import.meta.env.VITE_ADMIN_TOKEN || 'saarthi-admin-2026';
@@ -16,9 +17,9 @@ interface KBStats {
 }
 
 const AGENTS = [
-    { key: 'notes_agent', label: 'Notes Agent', emoji: '📝', desc: 'Lecture notes & handwritten PDFs' },
-    { key: 'books_agent', label: 'Books Agent', emoji: '📚', desc: 'Textbooks & reference material' },
-    { key: 'video_agent', label: 'Video Agent', emoji: '🎥', desc: 'Video lecture transcripts' },
+    { key: 'notes_agent', label: 'Notes Agent', desc: 'Lecture notes & handwritten PDFs' },
+    { key: 'books_agent', label: 'Books Agent', desc: 'Textbooks & reference material' },
+    { key: 'video_agent', label: 'Video Agent', desc: 'Video lecture transcripts' },
 ];
 
 function timeAgo(isoStr: string | null): string {
@@ -36,71 +37,110 @@ export default function Admin() {
     const [stats, setStats] = useState<KBStats | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [refreshing, setRefreshing] = useState(false);
 
-    const fetchStats = async () => {
+    const fetchStats = async (isRefresh = false) => {
+        if (isRefresh) setRefreshing(true);
+        setError('');
         try {
             const res = await fetch('/api/admin/kb/stats', {
                 headers: { Authorization: `Bearer ${ADMIN_TOKEN}` },
             });
-            if (!res.ok) throw new Error('Unauthorized or server error');
+            if (!res.ok) throw new Error(res.status === 403 ? 'Unauthorized' : 'Server error');
             setStats(await res.json());
         } catch (e: any) {
             setError(e.message);
         } finally {
             setLoading(false);
+            setRefreshing(false);
         }
     };
 
     useEffect(() => { fetchStats(); }, []);
 
+    const healthyCount = stats
+        ? AGENTS.filter(({ key }) => stats.agents[key]?.index_exists).length
+        : 0;
+
     return (
         <div className="admin-page">
             <div className="admin-header">
-                <div className="admin-header-left">
-                    <span className="admin-logo">🎓</span>
-                    <div>
-                        <h1>Saarthi Admin</h1>
-                        <p>Knowledge Base Management</p>
-                    </div>
+                <div>
+                    <h1>Knowledge Base</h1>
+                    <p>Manage source documents and vector indexes for all RAG agents</p>
                 </div>
-                <button className="admin-refresh-btn" onClick={fetchStats}>↻ Refresh</button>
+                <button
+                    className="admin-refresh-btn"
+                    onClick={() => fetchStats(true)}
+                    disabled={refreshing}
+                >
+                    <RefreshCw size={14} className={refreshing ? 'spin' : ''} />
+                    Refresh
+                </button>
             </div>
 
             <div className="admin-body">
-                <h2 className="admin-section-title">Knowledge Base Health</h2>
+                {!loading && !error && stats && (
+                    <div className="admin-summary-bar">
+                        <span className="admin-summary-stat">
+                            <strong>{healthyCount}</strong> / {AGENTS.length} agents indexed
+                        </span>
+                        <span className="admin-summary-divider" />
+                        <span className="admin-summary-stat">
+                            <strong>
+                                {AGENTS.reduce((sum, { key }) => sum + (stats.agents[key]?.total_chunks ?? 0), 0).toLocaleString()}
+                            </strong> total chunks
+                        </span>
+                        <span className="admin-summary-divider" />
+                        <span className="admin-summary-stat">
+                            <strong>
+                                {AGENTS.reduce((sum, { key }) => sum + (stats.agents[key]?.document_count ?? 0), 0)}
+                            </strong> documents
+                        </span>
+                    </div>
+                )}
 
-                {loading && <div className="admin-loading">Loading stats...</div>}
-                {error && <div className="admin-error">⚠️ {error}</div>}
+                {loading && <div className="admin-loading">Loading...</div>}
+                {error && <div className="admin-error">{error}</div>}
 
                 {stats && (
-                    <div className="admin-agents-grid">
-                        {AGENTS.map(({ key, label, emoji, desc }) => {
+                    <div className="admin-agents-table">
+                        <div className="admin-table-header">
+                            <span>Agent</span>
+                            <span>Documents</span>
+                            <span>Chunks</span>
+                            <span>Last Indexed</span>
+                            <span>Status</span>
+                            <span></span>
+                        </div>
+                        {AGENTS.map(({ key, label, desc }) => {
                             const s = stats.agents[key];
                             const healthy = s?.index_exists;
                             return (
-                                <div key={key} className={`admin-agent-card ${healthy ? 'healthy' : 'stale'}`}>
-                                    <div className="admin-agent-top">
-                                        <span className="admin-agent-emoji">{emoji}</span>
-                                        <div className="admin-agent-info">
-                                            <h3>{label}</h3>
-                                            <p>{desc}</p>
+                                <div key={key} className="admin-table-row">
+                                    <div className="admin-agent-cell">
+                                        <div className="admin-agent-icon">
+                                            <Database size={16} />
                                         </div>
-                                        <span className={`admin-status-badge ${healthy ? 'ok' : 'warn'}`}>
-                                            {healthy ? '✅' : '⚠️'}
-                                        </span>
+                                        <div>
+                                            <div className="admin-agent-name">{label}</div>
+                                            <div className="admin-agent-desc">{desc}</div>
+                                        </div>
                                     </div>
-                                    <div className="admin-agent-stats">
-                                        <span>{s?.document_count ?? 0} docs</span>
-                                        <span>·</span>
-                                        <span>{s?.total_chunks ?? 0} chunks</span>
-                                        <span>·</span>
-                                        <span>Last: {timeAgo(s?.last_indexed ?? null)}</span>
-                                    </div>
+                                    <span className="admin-cell-value">{s?.document_count ?? 0}</span>
+                                    <span className="admin-cell-value">{(s?.total_chunks ?? 0).toLocaleString()}</span>
+                                    <span className="admin-cell-value">{timeAgo(s?.last_indexed ?? null)}</span>
+                                    <span className={`admin-status-pill ${healthy ? 'ok' : 'warn'}`}>
+                                        {healthy
+                                            ? <><CheckCircle2 size={12} /> Indexed</>
+                                            : <><AlertTriangle size={12} /> Not indexed</>
+                                        }
+                                    </span>
                                     <button
                                         className="admin-manage-btn"
                                         onClick={() => navigate(`/admin/${key}`)}
                                     >
-                                        Manage →
+                                        Manage <ArrowRight size={14} />
                                     </button>
                                 </div>
                             );

@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, Trash2, UploadCloud, RefreshCw, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import './AdminAgent.css';
 
 const ADMIN_TOKEN = import.meta.env.VITE_ADMIN_TOKEN || 'saarthi-admin-2026';
 const API = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
-const AGENT_META: Record<string, { label: string; emoji: string; desc: string }> = {
-    notes_agent: { label: 'Notes Agent', emoji: '📝', desc: 'Lecture notes & handwritten PDFs' },
-    books_agent: { label: 'Books Agent', emoji: '📚', desc: 'Textbooks & reference material' },
-    video_agent: { label: 'Video Agent', emoji: '🎥', desc: 'Video lecture transcripts' },
+const AGENT_META: Record<string, { label: string; desc: string }> = {
+    notes_agent: { label: 'Notes Agent', desc: 'Lecture notes & handwritten PDFs' },
+    books_agent: { label: 'Books Agent', desc: 'Textbooks & reference material' },
+    video_agent: { label: 'Video Agent', desc: 'Video lecture transcripts' },
 };
 
 interface DocItem {
@@ -42,7 +43,7 @@ export default function AdminAgent() {
 
     const [dragOver, setDragOver] = useState(false);
     const [uploading, setUploading] = useState(false);
-    const [uploadMsg, setUploadMsg] = useState('');
+    const [uploadMsg, setUploadMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [jobId, setJobId] = useState<string | null>(null);
@@ -79,15 +80,13 @@ export default function AdminAgent() {
 
     useEffect(() => {
         fetchDocs();
-        return () => {
-            if (pollRef.current) clearInterval(pollRef.current);
-        };
+        return () => { if (pollRef.current) clearInterval(pollRef.current); };
     }, [agentKey]);
 
     const handleUpload = async (files: FileList | null) => {
         if (!files || files.length === 0) return;
         setUploading(true);
-        setUploadMsg('');
+        setUploadMsg(null);
         const form = new FormData();
         form.append('agent_name', agentKey!);
         Array.from(files).forEach((f) => form.append('files', f));
@@ -102,17 +101,17 @@ export default function AdminAgent() {
                 throw new Error(err.detail || 'Upload failed');
             }
             const data = await res.json();
-            setUploadMsg(`Uploaded: ${data.files.join(', ')}`);
+            setUploadMsg({ type: 'success', text: `Uploaded ${data.files.length} file${data.files.length !== 1 ? 's' : ''} successfully` });
             await fetchDocs();
         } catch (e: any) {
-            setUploadMsg(`Error: ${e.message}`);
+            setUploadMsg({ type: 'error', text: e.message });
         } finally {
             setUploading(false);
         }
     };
 
     const handleDelete = async (filename: string) => {
-        if (!confirm(`Delete ${filename}?`)) return;
+        if (!confirm(`Delete "${filename}"? This cannot be undone.`)) return;
         setDeletingFile(filename);
         try {
             const res = await fetch(
@@ -139,22 +138,19 @@ export default function AdminAgent() {
                 const status: IndexStatusResponse = await res.json();
                 setJobStatus(status);
                 setIndexLogs((prev) => {
-                    const last = prev[prev.length - 1];
-                    if (last !== status.progress) return [...prev, status.progress];
+                    if (prev[prev.length - 1] !== status.progress) return [...prev, status.progress];
                     return prev;
                 });
                 if (status.status !== 'running') {
                     clearInterval(pollRef.current!);
                     pollRef.current = null;
                 }
-            } catch {
-                // ignore poll errors
-            }
+            } catch { /* ignore poll errors */ }
         }, 2000);
     };
 
     const handleReindex = async () => {
-        setIndexLogs(['Starting re-index...']);
+        setIndexLogs(['Queuing index job...']);
         setJobStatus(null);
         try {
             const res = await fetch(`${API}/admin/kb/index`, {
@@ -163,8 +159,8 @@ export default function AdminAgent() {
                 body: JSON.stringify({ agent_name: agentKey }),
             });
             if (!res.ok) {
-                const err = await res.json().catch(() => ({ detail: 'Index failed' }));
-                throw new Error(err.detail || 'Index failed');
+                const err = await res.json().catch(() => ({ detail: 'Failed to start index' }));
+                throw new Error(err.detail || 'Failed to start index');
             }
             const data = await res.json();
             setJobId(data.job_id);
@@ -174,80 +170,90 @@ export default function AdminAgent() {
         }
     };
 
-    const isIndexing = jobStatus?.status === 'running' || (jobId && !jobStatus);
+    const isIndexing = jobStatus?.status === 'running' || (jobId !== null && !jobStatus);
 
     return (
         <div className="admin-agent-page">
             <div className="admin-agent-header">
-                <button className="admin-back-btn" onClick={() => navigate('/admin')}>← Back</button>
-                <span className="admin-agent-title-emoji">{meta.emoji}</span>
-                <div>
-                    <h1>{meta.label} Knowledge Base</h1>
+                <button className="admin-back-btn" onClick={() => navigate('/admin')}>
+                    <ArrowLeft size={14} /> Back
+                </button>
+                <div className="admin-agent-header-info">
+                    <h1>{meta.label}</h1>
                     <p>{meta.desc}</p>
                 </div>
             </div>
 
             <div className="admin-agent-body">
 
-                {/* ── Current Documents ── */}
-                <section className="admin-section">
-                    <h2>Current Documents</h2>
-                    {docsLoading && <div className="admin-loading">Loading...</div>}
-                    {docsError && <div className="admin-error">⚠️ {docsError}</div>}
-                    {!docsLoading && !docsError && (
-                        docs.length === 0 ? (
-                            <div className="admin-empty">No documents uploaded yet.</div>
-                        ) : (
-                            <table className="admin-docs-table">
-                                <thead>
-                                    <tr>
-                                        <th>Filename</th>
-                                        <th>Size</th>
-                                        <th>Uploaded</th>
-                                        <th></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {docs.map((doc) => (
-                                        <tr key={doc.name}>
-                                            <td className="admin-doc-name">{doc.name}</td>
-                                            <td>{doc.size_kb} KB</td>
-                                            <td>{new Date(doc.uploaded_at).toLocaleDateString()}</td>
-                                            <td>
-                                                <button
-                                                    className="admin-delete-btn"
-                                                    onClick={() => handleDelete(doc.name)}
-                                                    disabled={deletingFile === doc.name}
-                                                >
-                                                    {deletingFile === doc.name ? '...' : '🗑️'}
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        )
-                    )}
-                </section>
+                {/* Documents */}
+                <div className="admin-panel">
+                    <div className="admin-panel-header">
+                        <h2>Source Documents</h2>
+                        <span className="admin-doc-count">{docs.length} file{docs.length !== 1 ? 's' : ''}</span>
+                    </div>
 
-                {/* ── Upload New Documents ── */}
-                <section className="admin-section">
-                    <h2>Upload New Documents</h2>
+                    {docsLoading && <div className="admin-loading">Loading...</div>}
+                    {docsError && <div className="admin-error">{docsError}</div>}
+
+                    {!docsLoading && !docsError && docs.length === 0 && (
+                        <div className="admin-empty">No documents uploaded yet. Upload files below to get started.</div>
+                    )}
+
+                    {!docsLoading && docs.length > 0 && (
+                        <table className="admin-docs-table">
+                            <thead>
+                                <tr>
+                                    <th>Filename</th>
+                                    <th>Size</th>
+                                    <th>Uploaded</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {docs.map((doc) => (
+                                    <tr key={doc.name}>
+                                        <td className="admin-doc-name">{doc.name}</td>
+                                        <td>{doc.size_kb} KB</td>
+                                        <td>{new Date(doc.uploaded_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                                        <td>
+                                            <button
+                                                className="admin-delete-btn"
+                                                onClick={() => handleDelete(doc.name)}
+                                                disabled={deletingFile === doc.name}
+                                                title="Delete file"
+                                            >
+                                                {deletingFile === doc.name
+                                                    ? <Loader2 size={14} className="spin" />
+                                                    : <Trash2 size={14} />
+                                                }
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
+                </div>
+
+                {/* Upload */}
+                <div className="admin-panel">
+                    <div className="admin-panel-header">
+                        <h2>Upload Documents</h2>
+                    </div>
+
                     <div
                         className={`admin-dropzone ${dragOver ? 'drag-over' : ''}`}
                         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
                         onDragLeave={() => setDragOver(false)}
-                        onDrop={(e) => {
-                            e.preventDefault();
-                            setDragOver(false);
-                            handleUpload(e.dataTransfer.files);
-                        }}
+                        onDrop={(e) => { e.preventDefault(); setDragOver(false); handleUpload(e.dataTransfer.files); }}
                         onClick={() => fileInputRef.current?.click()}
                     >
-                        <span className="admin-dropzone-icon">📂</span>
-                        <p>Drop PDFs / TXTs here or click to browse</p>
-                        <p className="admin-dropzone-sub">Max 50 MB per file</p>
+                        <UploadCloud size={28} strokeWidth={1.5} />
+                        <p className="admin-dropzone-title">Drop files here or click to browse</p>
+                        <p className="admin-dropzone-sub">PDF and TXT files · Max 50 MB each</p>
                     </div>
+
                     <input
                         ref={fileInputRef}
                         type="file"
@@ -257,51 +263,78 @@ export default function AdminAgent() {
                         onChange={(e) => handleUpload(e.target.files)}
                     />
 
+                    {uploadMsg && (
+                        <div className={`admin-upload-msg ${uploadMsg.type}`}>
+                            {uploadMsg.type === 'success'
+                                ? <CheckCircle2 size={14} />
+                                : <XCircle size={14} />
+                            }
+                            {uploadMsg.text}
+                        </div>
+                    )}
+
                     <div className="admin-upload-actions">
                         <button
-                            className="admin-upload-btn"
+                            className="btn btn-outline"
                             onClick={() => fileInputRef.current?.click()}
                             disabled={uploading}
                         >
-                            {uploading ? 'Uploading...' : '⬆️ Upload Files'}
+                            {uploading ? <><Loader2 size={14} className="spin" /> Uploading...</> : <><UploadCloud size={14} /> Upload Files</>}
                         </button>
                         <button
-                            className="admin-reindex-btn"
+                            className="btn btn-primary"
                             onClick={handleReindex}
                             disabled={!!isIndexing}
                         >
-                            {isIndexing ? '⏳ Indexing...' : '🔄 Re-index Now'}
+                            {isIndexing
+                                ? <><Loader2 size={14} className="spin" /> Indexing...</>
+                                : <><RefreshCw size={14} /> Re-index Knowledge Base</>
+                            }
                         </button>
                     </div>
+                </div>
 
-                    {uploadMsg && (
-                        <div className={`admin-upload-msg ${uploadMsg.startsWith('Error') ? 'error' : 'success'}`}>
-                            {uploadMsg}
-                        </div>
-                    )}
-                </section>
-
-                {/* ── Indexing Log ── */}
+                {/* Index Log */}
                 {indexLogs.length > 0 && (
-                    <section className="admin-section">
-                        <h2>Indexing Log</h2>
-                        <div className="admin-index-log">
-                            {indexLogs.map((line, i) => (
-                                <div key={i} className="admin-log-line">
-                                    {line.startsWith('Error') ? '❌' : i === indexLogs.length - 1 && isIndexing ? '⏳' : '✅'} {line}
-                                </div>
-                            ))}
-                            {jobStatus && jobStatus.status !== 'running' && (
-                                <div className={`admin-log-line ${jobStatus.status === 'complete' ? 'success' : 'error'}`}>
-                                    {jobStatus.status === 'complete'
-                                        ? `✅ Done — ${jobStatus.total_documents} docs → ${jobStatus.chunks_created} chunks`
-                                        : `❌ Failed`}
-                                </div>
+                    <div className="admin-panel">
+                        <div className="admin-panel-header">
+                            <h2>Indexing Log</h2>
+                            {jobStatus && (
+                                <span className={`admin-status-pill ${jobStatus.status === 'complete' ? 'ok' : jobStatus.status === 'failed' ? 'warn' : 'running'}`}>
+                                    {jobStatus.status === 'complete' && <CheckCircle2 size={12} />}
+                                    {jobStatus.status === 'failed' && <XCircle size={12} />}
+                                    {jobStatus.status === 'running' && <Loader2 size={12} className="spin" />}
+                                    {jobStatus.status}
+                                </span>
                             )}
                         </div>
-                    </section>
+                        <div className="admin-index-log">
+                            {indexLogs.map((line, i) => (
+                                <div key={i} className="admin-log-line">{line}</div>
+                            ))}
+                            {jobStatus?.status === 'complete' && (
+                                <div className="admin-log-line success">
+                                    Done — {jobStatus.total_documents} docs processed, {jobStatus.chunks_created.toLocaleString()} chunks created
+                                </div>
+                            )}
+                            {jobStatus?.status === 'failed' && (
+                                <div className="admin-log-line error">Job failed</div>
+                            )}
+                        </div>
+                        {jobStatus?.status === 'complete' && (
+                            <div className="admin-index-stats">
+                                <div className="admin-index-stat">
+                                    <span className="admin-index-stat-val">{jobStatus.total_documents}</span>
+                                    <span className="admin-index-stat-label">Documents</span>
+                                </div>
+                                <div className="admin-index-stat">
+                                    <span className="admin-index-stat-val">{jobStatus.chunks_created.toLocaleString()}</span>
+                                    <span className="admin-index-stat-label">Chunks</span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 )}
-
             </div>
         </div>
     );
