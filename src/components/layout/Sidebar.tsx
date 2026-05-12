@@ -3,7 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import {
     LayoutDashboard, BookOpen, MessageSquare, Code2, FlaskConical,
     BarChart3, Settings, ChevronLeft, ChevronRight,
-    GraduationCap, Eye, Flame, ShieldCheck, Layers, Network, Target
+    GraduationCap, Eye, Flame, ShieldCheck, Layers, Network, Target, Swords
 } from 'lucide-react';
 
 const IS_ADMIN = !!import.meta.env.VITE_ADMIN_TOKEN;
@@ -22,6 +22,7 @@ const navItems = [
     { path: '/flashcards', label: 'Flashcards', icon: Layers, badge: 'AI' },
     { path: '/concept-map', label: 'Concept Map', icon: Network, badge: 'AI' },
     { path: '/exam-prep', label: 'Exam Prep', icon: Target, badge: 'AI' },
+    { path: '/socratic', label: 'Socratic Mode', icon: Swords, badge: 'AI' },
 ];
 
 const bottomItems = [
