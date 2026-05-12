@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import {
     BookOpen, ClipboardList, BarChart3, Clock, Flame,
-    ArrowRight, ChevronRight, Sparkles, Play, FileText, Award
+    ArrowRight, ChevronRight, Sparkles, Play, FileText, Award,
+    CalendarDays, Loader2, RefreshCw,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/auth.store';
@@ -32,6 +33,9 @@ function getUrgencyInfo(urgency: string) {
     }
 }
 
+interface StudyPlanDay { day: string; sessions: string[]; totalHours: number; }
+interface StudyPlan { weekPlan: StudyPlanDay[]; summary: string; priorityTopics: string[]; generatedAt: string; }
+
 export default function DashboardPage() {
     const { user } = useAuthStore();
     const navigate = useNavigate();
@@ -39,6 +43,9 @@ export default function DashboardPage() {
     const [continueCourses, setContinueCourses] = useState<EnrollmentWithCourseResponse[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [studyPlan, setStudyPlan] = useState<StudyPlan | null>(null);
+    const [planLoading, setPlanLoading] = useState(false);
+    const [planExpanded, setPlanExpanded] = useState(false);
 
     useEffect(() => {
         let cancelled = false;
@@ -62,6 +69,29 @@ export default function DashboardPage() {
         })();
         return () => { cancelled = true; };
     }, []);
+
+    const generateStudyPlan = async () => {
+        setPlanLoading(true);
+        try {
+            const courses = continueCourses.map((e) => ({
+                title: e.course.title,
+                code: e.course.code,
+                progressPercent: e.progressPercent,
+            }));
+            const plan = await api.post<StudyPlan>('/chat/study-plan', {
+                courses,
+                deadlines: [],
+                recentQuizScores: [],
+                hoursPerDay: 3,
+            });
+            setStudyPlan(plan);
+            setPlanExpanded(true);
+        } catch {
+            // silently fail — don't break the dashboard
+        } finally {
+            setPlanLoading(false);
+        }
+    };
 
     const statsCards = progress
         ? [
@@ -203,6 +233,78 @@ export default function DashboardPage() {
                         })}
                     </div>
                 </div>
+            </div>
+
+            {/* Study Plan */}
+            <div className="dash-section dash-study-plan animate-fade-in delay-350">
+                <div className="dash-section-header">
+                    <h2><CalendarDays size={20} style={{ color: 'var(--accent)' }} /> AI Study Plan</h2>
+                    <button
+                        className="btn btn-ghost btn-sm"
+                        onClick={generateStudyPlan}
+                        disabled={planLoading}
+                    >
+                        {planLoading
+                            ? <><Loader2 size={14} className="animate-spin" /> Generating...</>
+                            : studyPlan
+                                ? <><RefreshCw size={14} /> Regenerate</>
+                                : <><Sparkles size={14} /> Generate Plan</>
+                        }
+                    </button>
+                </div>
+
+                {!studyPlan && !planLoading && (
+                    <div className="dash-plan-empty">
+                        <CalendarDays size={32} strokeWidth={1.2} />
+                        <p>Get a personalized 7-day study schedule based on your courses, deadlines, and quiz performance.</p>
+                        <button className="btn btn-primary btn-sm" onClick={generateStudyPlan}>
+                            <Sparkles size={14} /> Generate My Study Plan
+                        </button>
+                    </div>
+                )}
+
+                {planLoading && (
+                    <div className="dash-plan-loading">
+                        <Loader2 size={20} className="animate-spin" />
+                        <span>Analyzing your progress and generating a personalized plan...</span>
+                    </div>
+                )}
+
+                {studyPlan && !planLoading && (
+                    <>
+                        {studyPlan.priorityTopics.length > 0 && (
+                            <div className="dash-plan-priorities">
+                                <span className="dash-plan-priority-label">Priority topics:</span>
+                                {studyPlan.priorityTopics.map((t, i) => (
+                                    <span key={i} className="badge badge-warning">{t}</span>
+                                ))}
+                            </div>
+                        )}
+                        <div className="dash-plan-days">
+                            {(planExpanded ? studyPlan.weekPlan : studyPlan.weekPlan.slice(0, 3)).map((day) => (
+                                <div key={day.day} className="dash-plan-day">
+                                    <div className="dash-plan-day-header">
+                                        <span className="dash-plan-day-name">{day.day}</span>
+                                        <span className="dash-plan-day-hours">{day.totalHours}h</span>
+                                    </div>
+                                    <ul className="dash-plan-sessions">
+                                        {day.sessions.map((s, i) => (
+                                            <li key={i}>{s}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            ))}
+                        </div>
+                        {studyPlan.weekPlan.length > 3 && (
+                            <button className="btn btn-ghost btn-sm dash-plan-toggle" onClick={() => setPlanExpanded((p) => !p)}>
+                                {planExpanded ? 'Show less' : `Show all ${studyPlan.weekPlan.length} days`} <ChevronRight size={14} style={{ transform: planExpanded ? 'rotate(270deg)' : 'rotate(90deg)', transition: 'transform 0.2s' }} />
+                            </button>
+                        )}
+                        {studyPlan.summary && (
+                            <p className="dash-plan-summary">{studyPlan.summary}</p>
+                        )}
+                    </>
+                )}
             </div>
 
             {/* Recommended */}

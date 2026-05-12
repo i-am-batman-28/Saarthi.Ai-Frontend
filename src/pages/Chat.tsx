@@ -1,17 +1,23 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, Sparkles, User, Bot, Loader2, BookOpen, Lightbulb, Code2, GraduationCap, Plus, Pencil, Trash2, Check, X } from 'lucide-react';
+import {
+    Send, Sparkles, User, Bot, Loader2, BookOpen, Lightbulb, Code2,
+    GraduationCap, Plus, Pencil, Trash2, Check, X, Mic, MicOff,
+} from 'lucide-react';
 import { api, type ConversationResponse, type ConversationDetailResponse, type SendMessageResponse, type PaginatedResponse } from '../lib/api';
 import ConfirmModal from '../components/ConfirmModal';
 import EmptyState from '../components/EmptyState';
 import './Chat.css';
 
-const GREETING = "Hello! I'm Saarthi, your AI learning companion. I specialize in:\n\n• **Digital Signal Processing** - FFT, filters, transforms\n• **Machine Learning** - Neural networks, optimization\n• **Data Structures** - Trees, graphs, algorithms\n• **Pattern Recognition** - Classification, feature extraction\n\nHow can I help you today?";
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+
+const GREETING = "Hello! I'm Saarthi, your AI learning companion. I specialize in:\n\n• **Digital Signal Processing** — FFT, filters, transforms\n• **Machine Learning** — Neural networks, optimization\n• **Data Structures** — Trees, graphs, algorithms\n• **Pattern Recognition** — Classification, feature extraction\n\nHow can I help you today?";
 
 interface Message {
     id: string;
     role: 'user' | 'assistant';
     content: string;
     timestamp: Date;
+    streaming?: boolean;
 }
 
 const suggestedTopics = [
@@ -25,6 +31,79 @@ function messageFromApi(m: { id: string; role: 'user' | 'assistant'; content: st
     return { id: m.id, role: m.role, content: m.content, timestamp: new Date(m.createdAt) };
 }
 
+// ── Voice recognition hook ────────────────────────────────────────────────────
+function useVoiceInput(onTranscript: (text: string) => void) {
+    const [listening, setListening] = useState(false);
+    const recognitionRef = useRef<SpeechRecognition | null>(null);
+    const supported = typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
+
+    const startListening = useCallback(() => {
+        if (!supported) return;
+        const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        const rec: SpeechRecognition = new SR();
+        rec.continuous = false;
+        rec.interimResults = false;
+        rec.lang = 'en-IN';
+        rec.onresult = (e) => {
+            const transcript = Array.from(e.results).map((r) => r[0].transcript).join(' ');
+            onTranscript(transcript);
+        };
+        rec.onerror = () => setListening(false);
+        rec.onend = () => setListening(false);
+        recognitionRef.current = rec;
+        rec.start();
+        setListening(true);
+    }, [supported, onTranscript]);
+
+    const stopListening = useCallback(() => {
+        recognitionRef.current?.stop();
+        setListening(false);
+    }, []);
+
+    return { supported, listening, startListening, stopListening };
+}
+
+// ── Message renderer ──────────────────────────────────────────────────────────
+function MessageContent({ content, streaming }: { content: string; streaming?: boolean }) {
+    return (
+        <div className="chat-msg-text">
+            {content.split(/```/).map((part, i) => {
+                if (i % 2 === 1) {
+                    const lines = part.split('\n');
+                    const lang = lines[0].trim();
+                    const code = lang ? lines.slice(1).join('\n') : part;
+                    return (
+                        <pre key={i} className="chat-code-block">
+                            {lang && <span className="chat-code-lang">{lang}</span>}
+                            <code>{code}</code>
+                        </pre>
+                    );
+                }
+                return (
+                    <div key={i}>
+                        {part.split('\n').map((line, k) => (
+                            <p key={k} className="chat-msg-p">
+                                {line.split(/(\[Source: .*?\]|\*\*.*?\*\*)/g).map((sub, j) => {
+                                    if (sub.startsWith('[Source:')) {
+                                        const src = sub.match(/\[Source: (.*?)\]/)?.[1];
+                                        return <span key={j} className="chat-source badge badge-success badge-sm">📚 {src}</span>;
+                                    }
+                                    if (sub.startsWith('**') && sub.endsWith('**')) {
+                                        return <strong key={j}>{sub.slice(2, -2)}</strong>;
+                                    }
+                                    return sub;
+                                })}
+                            </p>
+                        ))}
+                    </div>
+                );
+            })}
+            {streaming && <span className="chat-cursor" />}
+        </div>
+    );
+}
+
+// ── Main component ─────────────────────────────────────────────────────────────
 export default function ChatPage() {
     const [conversations, setConversations] = useState<ConversationResponse[]>([]);
     const [currentId, setCurrentId] = useState<string | null>(null);
@@ -40,17 +119,20 @@ export default function ChatPage() {
     const endRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const renameInputRef = useRef<HTMLInputElement>(null);
+    const abortRef = useRef<AbortController | null>(null);
+
+    const { supported: voiceSupported, listening, startListening, stopListening } = useVoiceInput(
+        (text) => setInput((prev) => prev ? `${prev} ${text}` : text)
+    );
 
     const fetchConversations = useCallback(async () => {
         setLoadingList(true);
-        setError(null);
         try {
             const res = await api.get<PaginatedResponse<ConversationResponse>>('/chat/conversations', { limit: 50, offset: 0 });
             setConversations(res.items || []);
         } catch (e) {
             const msg = e instanceof Error ? e.message : 'Failed to load conversations';
-            setError(msg);
-            if (msg.includes('401') || msg.toLowerCase().includes('unauthorized')) setError('Please log in to use chat.');
+            setError(msg.includes('401') ? 'Please log in to use chat.' : msg);
         } finally {
             setLoadingList(false);
         }
@@ -83,7 +165,6 @@ export default function ChatPage() {
 
     const submitRename = async (id: string) => {
         const title = editTitle.trim() || 'New Chat';
-        setError(null);
         try {
             await api.patch<ConversationResponse>(`/chat/conversations/${id}`, { title });
             setConversations((prev) => prev.map((c) => (c.id === id ? { ...c, title } : c)));
@@ -93,35 +174,20 @@ export default function ChatPage() {
         setEditingId(null);
     };
 
-    const cancelRename = () => {
-        setEditingId(null);
-        setEditTitle('');
-    };
-
-    const handleDeleteClick = (e: React.MouseEvent, id: string) => {
-        e.stopPropagation();
-        setDeleteConfirmId(id);
-    };
-
     const handleDeleteConfirm = async () => {
         if (!deleteConfirmId) return;
         const id = deleteConfirmId;
         setDeleteConfirmId(null);
-        setError(null);
         try {
             await api.delete(`/chat/conversations/${id}`);
             setConversations((prev) => prev.filter((c) => c.id !== id));
-            if (currentId === id) {
-                setCurrentId(null);
-                setMessages([]);
-            }
+            if (currentId === id) { setCurrentId(null); setMessages([]); }
         } catch (e) {
             setError(e instanceof Error ? e.message : 'Failed to delete');
         }
     };
 
     const handleNewChat = async () => {
-        setError(null);
         setSending(true);
         try {
             const conv = await api.post<ConversationResponse>('/chat/conversations', { title: 'New Chat' });
@@ -135,6 +201,7 @@ export default function ChatPage() {
         }
     };
 
+    // ── Streaming send ──────────────────────────────────────────────────────────
     const sendMessage = async () => {
         if (!input.trim() || sending) return;
         const q = input.trim();
@@ -149,7 +216,6 @@ export default function ChatPage() {
                 setConversations((prev) => [conv, ...prev]);
                 setCurrentId(conv.id);
                 conversationId = conv.id;
-                setMessages([]);
             } catch (e) {
                 setError(e instanceof Error ? e.message : 'Failed to create chat');
                 setSending(false);
@@ -158,21 +224,92 @@ export default function ChatPage() {
             setSending(false);
         }
 
-        const optimisticUser: Message = { id: `t-${Date.now()}`, role: 'user', content: q, timestamp: new Date() };
-        setMessages((prev) => [...prev, optimisticUser]);
+        // Optimistic user message
+        const userMsgId = `u-${Date.now()}`;
+        const streamMsgId = `s-${Date.now()}`;
+        setMessages((prev) => [
+            ...prev,
+            { id: userMsgId, role: 'user', content: q, timestamp: new Date() },
+            { id: streamMsgId, role: 'assistant', content: '', timestamp: new Date(), streaming: true },
+        ]);
         setSending(true);
+
+        // Build history from current messages (exclude the two we just added)
+        const historyMessages = messages.map((m) => ({ role: m.role, content: m.content }));
+
         try {
-            const data = await api.post<SendMessageResponse>(`/chat/conversations/${conversationId}/messages`, { message: q });
-            setMessages((prev) => {
-                const withoutOptimistic = prev.filter((m) => m.id !== optimisticUser.id);
-                return [...withoutOptimistic, messageFromApi(data.userMessage), messageFromApi(data.assistantMessage)];
+            const ctrl = new AbortController();
+            abortRef.current = ctrl;
+
+            const res = await fetch(`${BASE_URL}/chat/stream`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message: q,
+                    conversationHistory: historyMessages,
+                    conversationId,
+                }),
+                signal: ctrl.signal,
             });
+
+            if (!res.ok || !res.body) throw new Error('Stream request failed');
+
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            let accumulated = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                const text = decoder.decode(value, { stream: true });
+                const lines = text.split('\n');
+                for (const line of lines) {
+                    if (!line.startsWith('data: ')) continue;
+                    const payload = line.slice(6);
+                    if (payload === '[DONE]') break;
+                    if (payload.startsWith('[ERROR]')) {
+                        throw new Error(payload.slice(8));
+                    }
+                    accumulated += payload.replace(/\\n/g, '\n');
+                    setMessages((prev) =>
+                        prev.map((m) =>
+                            m.id === streamMsgId
+                                ? { ...m, content: accumulated, streaming: true }
+                                : m
+                        )
+                    );
+                }
+            }
+
+            // Mark streaming done, update conversation list
+            setMessages((prev) =>
+                prev.map((m) =>
+                    m.id === streamMsgId ? { ...m, streaming: false } : m
+                )
+            );
             fetchConversations();
-        } catch (e) {
-            setMessages((prev) => prev.filter((m) => m.id !== optimisticUser.id));
-            setError(e instanceof Error ? e.message : 'Failed to send message');
+
+        } catch (e: any) {
+            if (e?.name === 'AbortError') return;
+            // Fallback to non-streaming
+            try {
+                const data = await api.post<SendMessageResponse>(
+                    `/chat/conversations/${conversationId}/messages`,
+                    { message: q }
+                );
+                setMessages((prev) => {
+                    const filtered = prev.filter((m) => m.id !== userMsgId && m.id !== streamMsgId);
+                    return [...filtered, messageFromApi(data.userMessage), messageFromApi(data.assistantMessage)];
+                });
+                fetchConversations();
+            } catch (fallbackErr) {
+                setMessages((prev) => prev.filter((m) => m.id !== userMsgId && m.id !== streamMsgId));
+                setError(fallbackErr instanceof Error ? fallbackErr.message : 'Failed to send message');
+            }
         } finally {
             setSending(false);
+            abortRef.current = null;
         }
     };
 
@@ -182,10 +319,13 @@ export default function ChatPage() {
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
     };
 
-    const displayMessages = messages.length === 0 && !loadingChat ? [{ id: 'greeting', role: 'assistant' as const, content: GREETING, timestamp: new Date() }] : messages;
+    const displayMessages = messages.length === 0 && !loadingChat
+        ? [{ id: 'greeting', role: 'assistant' as const, content: GREETING, timestamp: new Date() }]
+        : messages;
 
     return (
         <div className="chat-page">
+            {/* Sidebar */}
             <div className="chat-sidebar">
                 <button
                     type="button"
@@ -201,51 +341,33 @@ export default function ChatPage() {
                     {loadingList ? (
                         <div className="chat-history-loading"><Loader2 size={14} className="animate-spin" /> Loading...</div>
                     ) : conversations.length === 0 ? (
-                        <EmptyState
-                            icon={<Sparkles size={28} />}
-                            title="No conversations yet"
-                            description="Start a new chat to get help from Saarthi."
-                        />
+                        <EmptyState icon={<Sparkles size={28} />} title="No conversations yet" description="Start a new chat to get help from Saarthi." />
                     ) : (
                         conversations.map((c) => (
-                            <div
-                                key={c.id}
-                                className={`chat-history-item-wrap ${currentId === c.id ? 'active' : ''}`}
-                            >
-                                <button
-                                    type="button"
-                                    className="chat-history-item"
-                                    onClick={() => loadConversation(c.id)}
-                                >
+                            <div key={c.id} className={`chat-history-item-wrap ${currentId === c.id ? 'active' : ''}`}>
+                                <button type="button" className="chat-history-item" onClick={() => loadConversation(c.id)}>
                                     {editingId === c.id ? (
                                         <input
                                             ref={renameInputRef}
                                             className="chat-history-rename-input"
                                             value={editTitle}
                                             onChange={(e) => setEditTitle(e.target.value)}
-                                            onKeyDown={(e) => {
-                                                e.stopPropagation();
-                                                if (e.key === 'Enter') submitRename(c.id);
-                                                if (e.key === 'Escape') cancelRename();
-                                            }}
+                                            onKeyDown={(e) => { e.stopPropagation(); if (e.key === 'Enter') submitRename(c.id); if (e.key === 'Escape') setEditingId(null); }}
                                             onClick={(e) => e.stopPropagation()}
                                         />
                                     ) : (
-                                        <>
-                                            <Sparkles size={14} className="chat-history-icon" />
-                                            <span className="chat-history-title">{c.title || 'New Chat'}</span>
-                                        </>
+                                        <><Sparkles size={14} className="chat-history-icon" /><span className="chat-history-title">{c.title || 'New Chat'}</span></>
                                     )}
                                 </button>
                                 {editingId === c.id ? (
                                     <div className="chat-history-actions">
-                                        <button type="button" className="chat-history-action" onClick={() => submitRename(c.id)} aria-label="Save"><Check size={14} /></button>
-                                        <button type="button" className="chat-history-action" onClick={cancelRename} aria-label="Cancel"><X size={14} /></button>
+                                        <button type="button" className="chat-history-action" onClick={() => submitRename(c.id)}><Check size={14} /></button>
+                                        <button type="button" className="chat-history-action" onClick={() => setEditingId(null)}><X size={14} /></button>
                                     </div>
                                 ) : (
                                     <div className="chat-history-actions">
-                                        <button type="button" className="chat-history-action" onClick={(e) => startRename(e, c)} aria-label="Rename"><Pencil size={14} /></button>
-                                        <button type="button" className="chat-history-action chat-history-action-delete" onClick={(e) => handleDeleteClick(e, c.id)} aria-label="Delete"><Trash2 size={14} /></button>
+                                        <button type="button" className="chat-history-action" onClick={(e) => startRename(e, c)}><Pencil size={14} /></button>
+                                        <button type="button" className="chat-history-action chat-history-action-delete" onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(c.id); }}><Trash2 size={14} /></button>
                                     </div>
                                 )}
                             </div>
@@ -254,6 +376,7 @@ export default function ChatPage() {
                 </div>
             </div>
 
+            {/* Main */}
             <div className="chat-main">
                 {error && <div className="chat-error" role="alert">{error}</div>}
                 {loadingChat && messages.length === 0 ? (
@@ -271,53 +394,17 @@ export default function ChatPage() {
                                             <span className="chat-msg-name">{msg.role === 'user' ? 'You' : 'Saarthi AI'}</span>
                                             <span className="chat-msg-time">{msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                         </div>
-                                        <div className="chat-msg-text">
-                                            {msg.content.split(/```/).map((part, i) => {
-                                                if (i % 2 === 1) {
-                                                    return (
-                                                        <pre key={i} className="chat-code-block">
-                                                            <code>{part}</code>
-                                                        </pre>
-                                                    );
-                                                }
-                                                return (
-                                                    <div key={i}>
-                                                        {part.split('\n').map((line, k) => (
-                                                            <p key={k} className="chat-msg-p">
-                                                                {line.split(/(\[Source: .*?\]|\*\*.*?\*\*)/g).map((subPart, j) => {
-                                                                    if (subPart.startsWith('[Source:')) {
-                                                                        const source = subPart.match(/\[Source: (.*?)\]/)?.[1];
-                                                                        return (
-                                                                            <span key={j} className="badge badge-success badge-sm chat-source">
-                                                                                📚 {source}
-                                                                            </span>
-                                                                        );
-                                                                    }
-                                                                    if (subPart.startsWith('**') && subPart.endsWith('**')) {
-                                                                        return <strong key={j}>{subPart.slice(2, -2)}</strong>;
-                                                                    }
-                                                                    return subPart;
-                                                                })}
-                                                            </p>
-                                                        ))}
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
+                                        {msg.streaming && msg.content === '' ? (
+                                            <div className="chat-typing">
+                                                <Loader2 size={16} className="animate-spin" />
+                                                <span>Saarthi is thinking...</span>
+                                            </div>
+                                        ) : (
+                                            <MessageContent content={msg.content} streaming={msg.streaming} />
+                                        )}
                                     </div>
                                 </div>
                             ))}
-                            {sending && (
-                                <div className="chat-msg assistant">
-                                    <div className="chat-msg-avatar assistant"><Bot size={18} /></div>
-                                    <div className="chat-msg-content">
-                                        <div className="chat-typing">
-                                            <Loader2 size={16} className="animate-spin" />
-                                            <span>Saarthi is thinking...</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
                             <div ref={endRef} />
                         </div>
 
@@ -336,20 +423,39 @@ export default function ChatPage() {
 
                         <div className="chat-input-area">
                             <div className="chat-input-wrapper">
+                                {voiceSupported && (
+                                    <button
+                                        type="button"
+                                        className={`chat-voice-btn ${listening ? 'active' : ''}`}
+                                        onClick={listening ? stopListening : startListening}
+                                        title={listening ? 'Stop listening' : 'Voice input'}
+                                        disabled={sending}
+                                    >
+                                        {listening ? <MicOff size={16} /> : <Mic size={16} />}
+                                    </button>
+                                )}
                                 <textarea
                                     ref={inputRef}
                                     value={input}
                                     onChange={(e) => setInput(e.target.value)}
                                     onKeyDown={handleKeyDown}
-                                    placeholder="Ask Saarthi anything about your subjects..."
+                                    placeholder={listening ? 'Listening...' : 'Ask Saarthi anything about your subjects...'}
                                     rows={1}
                                     disabled={sending}
                                 />
-                                <button type="button" className="chat-send-btn" onClick={sendMessage} disabled={!input.trim() || sending}>
-                                    <Send size={18} />
+                                <button
+                                    type="button"
+                                    className="chat-send-btn"
+                                    onClick={sendMessage}
+                                    disabled={!input.trim() || sending}
+                                >
+                                    {sending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
                                 </button>
                             </div>
-                            <p className="chat-input-hint">Press Enter to send • Shift+Enter for new line</p>
+                            <p className="chat-input-hint">
+                                Enter to send · Shift+Enter for new line
+                                {voiceSupported && ' · Mic for voice input'}
+                            </p>
                         </div>
                     </>
                 )}
