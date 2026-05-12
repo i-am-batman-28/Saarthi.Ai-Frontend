@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     ArrowLeft, Plus, FileText, Video, BookOpen, Trash2, X, Save, Paperclip,
-    Link as LinkIcon, Heading, Pencil, ExternalLink, Send, Sparkles, Users
+    Link as LinkIcon, Heading, Pencil, ExternalLink, Send, Sparkles, Users,
+    Mail, Copy, Check, LogIn
 } from 'lucide-react';
 import { useAuthStore } from '../stores/auth.store';
 import { api, uploadFile, getUploadFullUrl, getMaterialFileUrl, type CourseResponse, type PaginatedResponse, type AssignmentResponse, type MaterialResponse, type StreamItemResponse, type CoursePersonResponse } from '../lib/api';
@@ -231,6 +232,21 @@ export default function CourseDetailPage() {
     const [docPdfError, setDocPdfError] = useState<string | null>(null);
     const [docPdfLoading, setDocPdfLoading] = useState(false);
 
+    // Invite state (teacher)
+    const [showInviteModal, setShowInviteModal] = useState(false);
+    const [inviteEmail, setInviteEmail] = useState('');
+    const [inviteSending, setInviteSending] = useState(false);
+    const [inviteResult, setInviteResult] = useState<{ code: string; link: string } | null>(null);
+    const [inviteCopied, setInviteCopied] = useState(false);
+    const [inviteError, setInviteError] = useState('');
+
+    // Join state (student)
+    const [showJoinModal, setShowJoinModal] = useState(false);
+    const [joinCode, setJoinCode] = useState('');
+    const [joinLoading, setJoinLoading] = useState(false);
+    const [joinError, setJoinError] = useState('');
+    const [joinSuccess, setJoinSuccess] = useState('');
+
     const handlePostAnnouncement = () => {
         if (!announcementText.trim()) return;
         const now = new Date().toISOString().split('T')[0];
@@ -415,6 +431,49 @@ export default function CourseDetailPage() {
         }
     };
 
+
+    const handleSendInvite = async () => {
+        if (!inviteEmail.trim() || !courseId) return;
+        setInviteSending(true);
+        setInviteError('');
+        setInviteResult(null);
+        try {
+            const res = await api.post<{ inviteCode: string; inviteLink: string }>(`/courses/${courseId}/invite`, { email: inviteEmail.trim() });
+            setInviteResult({ code: res.inviteCode, link: res.inviteLink });
+            setInviteEmail('');
+        } catch (e) {
+            setInviteError(e instanceof Error ? e.message : 'Failed to send invite.');
+        } finally {
+            setInviteSending(false);
+        }
+    };
+
+    const handleCopyInviteCode = (code: string) => {
+        navigator.clipboard.writeText(code).then(() => {
+            setInviteCopied(true);
+            setTimeout(() => setInviteCopied(false), 2000);
+        });
+    };
+
+    const handleJoinCourse = async () => {
+        if (!joinCode.trim()) return;
+        setJoinLoading(true);
+        setJoinError('');
+        setJoinSuccess('');
+        try {
+            const res = await api.post<{ courseTitle: string; message: string }>('/courses/join', { inviteCode: joinCode.trim() });
+            setJoinSuccess(res.message || `You joined ${res.courseTitle}!`);
+            setJoinCode('');
+            // Reload people list
+            const r = await api.get<{ items: CoursePersonResponse[]; total: number }>(`/courses/${courseId}/people`, { limit: PAGE_SIZE, offset: 0 });
+            setPeople(r.items || []);
+            setPeopleTotal(r.total ?? 0);
+        } catch (e) {
+            setJoinError(e instanceof Error ? e.message : 'Invalid or expired invite code.');
+        } finally {
+            setJoinLoading(false);
+        }
+    };
 
     // Calculate Items by Topic
     const itemsByTopic: Record<string, any[]> = {};
@@ -666,7 +725,18 @@ export default function CourseDetailPage() {
             {activeTab === 'people' && (
                 <div className="cd-people-container">
                     <div className="cd-people-section">
-                        <h2>Classmates ({peopleTotal})</h2>
+                        <div className="cd-people-header">
+                            <h2>Classmates ({peopleTotal})</h2>
+                            {isInstructor ? (
+                                <button className="btn btn-primary btn-sm" onClick={() => { setShowInviteModal(true); setInviteResult(null); setInviteError(''); }}>
+                                    <Mail size={15} /> Invite Students
+                                </button>
+                            ) : (
+                                <button className="btn btn-outline btn-sm" onClick={() => { setShowJoinModal(true); setJoinError(''); setJoinSuccess(''); }}>
+                                    <LogIn size={15} /> Join with Code
+                                </button>
+                            )}
+                        </div>
                         {people.length === 0 && peopleTotal === 0 && (
                             <EmptyState icon={<Users size={28} />} title="No one enrolled yet" description="Enrolled classmates will appear here." />
                         )}
@@ -898,6 +968,96 @@ export default function CourseDetailPage() {
                 onCancel={() => setMaterialToDelete(null)}
                 loading={!!deletingMaterialId}
             />
+
+            {/* ── Invite Students Modal (teacher) ── */}
+            {showInviteModal && (
+                <div className="cd-modal-overlay" onClick={() => setShowInviteModal(false)}>
+                    <div className="cd-modal animate-scale-in" onClick={(e) => e.stopPropagation()}>
+                        <div className="cd-modal-header">
+                            <h2><Mail size={18} /> Invite Students</h2>
+                            <button className="cd-modal-close" onClick={() => setShowInviteModal(false)}><X size={20} /></button>
+                        </div>
+                        <div className="cd-modal-body">
+                            <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+                                Enter the student's email to generate an invite link. They'll use the code to join this course.
+                                Use <strong>*</strong> to create an open link anyone can join.
+                            </p>
+                            <div className="cd-modal-field">
+                                <label>Student Email</label>
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                    <input
+                                        className="input"
+                                        placeholder="student@example.com or *"
+                                        value={inviteEmail}
+                                        onChange={(e) => setInviteEmail(e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Enter' && handleSendInvite()}
+                                    />
+                                    <button className="btn btn-primary" onClick={handleSendInvite} disabled={inviteSending || !inviteEmail.trim()}>
+                                        {inviteSending ? 'Sending…' : 'Generate'}
+                                    </button>
+                                </div>
+                            </div>
+                            {inviteError && <p style={{ color: 'var(--error)', fontSize: '0.8125rem' }}>{inviteError}</p>}
+                            {inviteResult && (
+                                <div className="cd-invite-result">
+                                    <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                                        Share this code with the student:
+                                    </p>
+                                    <div className="cd-invite-code-row">
+                                        <span className="cd-invite-code">{inviteResult.code}</span>
+                                        <button className="btn btn-outline btn-sm" onClick={() => handleCopyInviteCode(inviteResult.code)}>
+                                            {inviteCopied ? <><Check size={14} /> Copied!</> : <><Copy size={14} /> Copy</>}
+                                        </button>
+                                    </div>
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                                        Link expires in 72 hours. Student uses this at Courses → Join with Code.
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                        <div className="cd-modal-footer">
+                            <button className="btn btn-outline" onClick={() => setShowInviteModal(false)}>Done</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Join with Code Modal (student) ── */}
+            {showJoinModal && (
+                <div className="cd-modal-overlay" onClick={() => setShowJoinModal(false)}>
+                    <div className="cd-modal animate-scale-in" onClick={(e) => e.stopPropagation()}>
+                        <div className="cd-modal-header">
+                            <h2><LogIn size={18} /> Join with Code</h2>
+                            <button className="cd-modal-close" onClick={() => setShowJoinModal(false)}><X size={20} /></button>
+                        </div>
+                        <div className="cd-modal-body">
+                            <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+                                Enter the invite code your teacher shared with you.
+                            </p>
+                            <div className="cd-modal-field">
+                                <label>Invite Code</label>
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                    <input
+                                        className="input"
+                                        placeholder="e.g. aB3xYz9Qr1"
+                                        value={joinCode}
+                                        onChange={(e) => setJoinCode(e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Enter' && handleJoinCourse()}
+                                    />
+                                    <button className="btn btn-primary" onClick={handleJoinCourse} disabled={joinLoading || !joinCode.trim()}>
+                                        {joinLoading ? 'Joining…' : 'Join'}
+                                    </button>
+                                </div>
+                            </div>
+                            {joinError && <p style={{ color: 'var(--error)', fontSize: '0.8125rem' }}>{joinError}</p>}
+                            {joinSuccess && <p style={{ color: 'var(--accent)', fontSize: '0.8125rem', fontWeight: 600 }}>{joinSuccess}</p>}
+                        </div>
+                        <div className="cd-modal-footer">
+                            <button className="btn btn-outline" onClick={() => setShowJoinModal(false)}>Close</button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Submit Assignment Modal (file upload) */}
             {submitAssignmentId && (
