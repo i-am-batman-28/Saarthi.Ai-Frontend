@@ -195,16 +195,16 @@ interface ExecResponse {
 // ── AI Explanation Panel ──────────────────────────────────────────────────────
 
 function AIExplanationPanel({
-    explanation, suggestions, onClose, streaming,
+    explanation, suggestions, onClose, streaming, isError,
 }: {
-    explanation: string; suggestions: string[]; onClose: () => void; streaming: boolean;
+    explanation: string; suggestions: string[]; onClose: () => void; streaming: boolean; isError: boolean;
 }) {
     return (
         <div className="cl-ai-panel animate-fade-in">
             <div className="cl-ai-panel-header">
                 <div className="cl-ai-panel-title">
-                    <Brain size={16} style={{ color: 'var(--accent)' }} />
-                    <span>AI Error Analysis</span>
+                    <Brain size={16} style={{ color: isError ? '#C86F7A' : 'var(--accent)' }} />
+                    <span>{isError ? 'AI Error Analysis' : 'AI Insight'}</span>
                     {streaming && <Loader2 size={14} className="animate-spin" style={{ color: 'var(--text-muted)' }} />}
                 </div>
                 <button className="cl-ai-close" onClick={onClose}><X size={14} /></button>
@@ -241,6 +241,7 @@ export default function CodeLabPage() {
     const [aiExplanation, setAiExplanation] = useState('');
     const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
     const [aiStreaming, setAiStreaming] = useState(false);
+    const [aiIsError, setAiIsError] = useState(false);
     const [showGraph, setShowGraph] = useState(false);
     const [graphData, setGraphData] = useState<{ freq: number; mag: number }[]>([]);
     const [stdin, setStdin] = useState('');
@@ -261,10 +262,11 @@ export default function CodeLabPage() {
         return data;
     }, []);
 
-    const streamAIExplanation = async (code: string, lang: string, stderr: string, exitCode: number) => {
+    const streamAIExplanation = async (code: string, lang: string, stderr: string, exitCode: number, stdout = '') => {
         setAiStreaming(true);
         setAiExplanation('');
         setAiSuggestions([]);
+        setAiIsError(exitCode !== 0 || !!stderr);
         setActiveTab('ai');
 
         try {
@@ -273,7 +275,7 @@ export default function CodeLabPage() {
                 method: 'POST',
                 credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ code, language: lang, stderr, exitCode, courseContext: 'Engineering' }),
+                body: JSON.stringify({ code, language: lang, stderr, exitCode, stdout, courseContext: 'Engineering' }),
             });
 
             if (!resp.body) return;
@@ -320,11 +322,14 @@ export default function CodeLabPage() {
 
             const hasError = resp.result.exitCode !== 0 || resp.result.stderr;
             if (hasError) {
-                // Stream explanation
                 streamAIExplanation(code, language, resp.result.stderr, resp.result.exitCode);
-            } else if (language === 'python' && code.includes('butterworth')) {
-                setGraphData(generateGraphData());
-                setShowGraph(true);
+            } else {
+                // Always stream an AI insight on success too
+                streamAIExplanation(code, language, '', 0, resp.result.stdout);
+                if (language === 'python' && code.includes('butterworth')) {
+                    setGraphData(generateGraphData());
+                    setShowGraph(true);
+                }
             }
         } catch (e: any) {
             setResult({
@@ -611,12 +616,13 @@ export default function CodeLabPage() {
                                         explanation={aiExplanation}
                                         suggestions={aiSuggestions}
                                         streaming={aiStreaming}
+                                        isError={aiIsError}
                                         onClose={() => { setAiExplanation(''); setAiSuggestions([]); }}
                                     />
                                 ) : (
                                     <div className="cl-ai-empty">
                                         <Brain size={36} style={{ color: 'var(--text-muted)' }} />
-                                        <p>Run your code. If it has an error, the AI will instantly explain what went wrong and how to fix it.</p>
+                                        <p>Run your code — the AI will analyse the output and give you insights or explain any errors.</p>
                                     </div>
                                 )}
                             </div>
