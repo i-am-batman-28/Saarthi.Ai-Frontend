@@ -3,8 +3,10 @@ import { NavLink, useLocation } from 'react-router-dom';
 import {
     LayoutDashboard, BookOpen, MessageSquare, Code2, FlaskConical,
     BarChart3, Settings, ChevronLeft, ChevronRight,
-    GraduationCap, Eye, Flame
+    GraduationCap, Eye, Flame, ShieldCheck
 } from 'lucide-react';
+
+const IS_ADMIN = !!import.meta.env.VITE_ADMIN_TOKEN;
 import './Sidebar.css';
 import { LogoIcon } from '../LogoIcon';
 
@@ -21,6 +23,7 @@ const navItems = [
 
 const bottomItems = [
     { path: '/settings', label: 'Settings', icon: Settings },
+    ...(IS_ADMIN ? [{ path: '/admin', label: 'Admin Panel', icon: ShieldCheck }] : []),
 ];
 
 export default function Sidebar() {

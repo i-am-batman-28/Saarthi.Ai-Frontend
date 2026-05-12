@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { MessageCircle, X, Send, Loader2, User, Bot } from 'lucide-react';
 import { LogoIcon } from './LogoIcon';
-import { api } from '../lib/api';
+import { api, uploadDataset } from '../lib/api';
 import './AIChatbot.css';
 
 interface Message {
@@ -26,8 +26,10 @@ export default function AIChatbot({ position = 'bottom-right' }: AIChatbotProps)
         },]);
     const [inputValue, setInputValue] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -95,11 +97,45 @@ export default function AIChatbot({ position = 'bottom-right' }: AIChatbotProps)
         }
     };
 
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setIsUploading(true);
+        const notice: Message = {
+            id: Date.now().toString(),
+            role: 'assistant',
+            content: `Uploading **${file.name}**...`,
+            timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, notice]);
+        try {
+            await uploadDataset(file);
+            const confirm: Message = {
+                id: (Date.now() + 1).toString(),
+                role: 'assistant',
+                content: `Dataset **${file.name}** uploaded. You can now ask questions about it — e.g. "Summarize the dataset" or "Show me the column statistics".`,
+                timestamp: new Date(),
+            };
+            setMessages((prev) => [...prev.slice(0, -1), confirm]);
+        } catch {
+            const err: Message = {
+                id: (Date.now() + 1).toString(),
+                role: 'assistant',
+                content: 'Dataset upload failed. Please make sure it is a valid CSV file and try again.',
+                timestamp: new Date(),
+            };
+            setMessages((prev) => [...prev.slice(0, -1), err]);
+        } finally {
+            setIsUploading(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
+
     const suggestedQuestions = [
         'Explain Nyquist theorem',
         'What is gradient descent?',
         'Help me with binary search',
-        'DSP exam tips',
+        'Analyze my dataset',
     ];
 
     return (
@@ -447,9 +483,31 @@ export default function AIChatbot({ position = 'bottom-right' }: AIChatbotProps)
                                 <Send style={{ width: '1.25rem', height: '1.25rem' }} />
                             </button>
                         </div>
-                        <p style={{ fontSize: '0.75rem', color: 'var(--gray-500)', marginTop: '0.5rem', textAlign: 'center', margin: '0.5rem 0 0 0' }}>
-                            Press Enter to send • Shift+Enter for new line
-                        </p>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.5rem' }}>
+                            <p style={{ fontSize: '0.75rem', color: 'var(--gray-500)', margin: 0 }}>
+                                Press Enter to send
+                            </p>
+                            <label
+                                title="Upload CSV for data analysis"
+                                style={{
+                                    fontSize: '0.7rem',
+                                    color: 'var(--primary)',
+                                    cursor: isUploading ? 'not-allowed' : 'pointer',
+                                    opacity: isUploading ? 0.5 : 1,
+                                    userSelect: 'none',
+                                }}
+                            >
+                                {isUploading ? 'Uploading...' : '+ Upload CSV'}
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept=".csv"
+                                    disabled={isUploading}
+                                    onChange={handleFileUpload}
+                                    style={{ display: 'none' }}
+                                />
+                            </label>
+                        </div>
                     </div>
                 </div>
             )}

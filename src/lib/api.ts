@@ -278,3 +278,41 @@ export async function uploadFile(file: File): Promise<{ url: string }> {
   if (!res.ok) throw new Error(data?.error?.message ?? data?.message ?? 'Upload failed');
   return data;
 }
+
+export interface DatasetItem {
+  filename: string;
+  size_kb: number;
+}
+
+export interface DatasetUploadResponse {
+  status: string;
+  filename: string;
+  size_bytes: number;
+  thread_id: string | null;
+  cloud_synced: boolean;
+}
+
+/** Upload a CSV dataset for the data_analysis_agent. */
+export async function uploadDataset(
+  file: File,
+  threadId?: string
+): Promise<DatasetUploadResponse> {
+  const base = getBaseUrl();
+  const form = new FormData();
+  form.append('file', file);
+  if (threadId) form.append('thread_id', threadId);
+  const res = await fetch(`${base}/data/upload`, {
+    method: 'POST',
+    credentials: 'include',
+    body: form,
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.error?.message ?? data?.message ?? 'Dataset upload failed');
+  return data;
+}
+
+/** List all CSV datasets currently available for analysis. */
+export async function listDatasets(): Promise<DatasetItem[]> {
+  const result = await api.get<{ datasets: DatasetItem[] }>('/data/list');
+  return result.datasets;
+}

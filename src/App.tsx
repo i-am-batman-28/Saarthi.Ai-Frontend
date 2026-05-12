@@ -18,6 +18,8 @@ import ProgressPage from './pages/Progress';
 import NotesPage from './pages/Notes';
 import SearchPage from './pages/Search';
 import SettingsPage from './pages/settings/Settings';
+import AdminPage from './pages/Admin';
+import AdminAgentPage from './pages/AdminAgent';
 import { useAuthStore } from './stores/auth.store';
 import './stores/settings.store'; // Initialize settings (theme/font) on load
 
@@ -55,6 +57,10 @@ function App() {
           <Route path="/search" element={<SearchPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
+
+        {/* Admin Routes (standalone, no AppShell) */}
+        <Route path="/admin" element={<AdminPage />} />
+        <Route path="/admin/:agentKey" element={<AdminAgentPage />} />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
