@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { usePageTitle } from '../lib/usePageTitle';
 import {
     Send, Sparkles, User, Bot, Loader2, BookOpen, Lightbulb, Code2,
     GraduationCap, Plus, Pencil, Trash2, Check, X, Mic, MicOff,
@@ -105,6 +106,7 @@ function MessageContent({ content, streaming }: { content: string; streaming?: b
 
 // ── Main component ─────────────────────────────────────────────────────────────
 export default function ChatPage() {
+    usePageTitle('AI Tutor');
     const [conversations, setConversations] = useState<ConversationResponse[]>([]);
     const [currentId, setCurrentId] = useState<string | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
@@ -113,6 +115,7 @@ export default function ChatPage() {
     const [loadingChat, setLoadingChat] = useState(false);
     const [sending, setSending] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [listRetryCount, setListRetryCount] = useState(0);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editTitle, setEditTitle] = useState('');
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -136,7 +139,7 @@ export default function ChatPage() {
         } finally {
             setLoadingList(false);
         }
-    }, []);
+    }, [listRetryCount]);
 
     useEffect(() => { fetchConversations(); }, [fetchConversations]);
 
@@ -340,6 +343,13 @@ export default function ChatPage() {
                     <p className="chat-history-label">Recent Conversations</p>
                     {loadingList ? (
                         <div className="chat-history-loading"><Loader2 size={14} className="animate-spin" /> Loading...</div>
+                    ) : error && conversations.length === 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', padding: '2rem 1rem', textAlign: 'center' }}>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{error}</p>
+                            <button className="btn btn-primary btn-sm" onClick={() => { setError(null); setListRetryCount(c => c + 1); }}>
+                                Try again
+                            </button>
+                        </div>
                     ) : conversations.length === 0 ? (
                         <EmptyState icon={<Sparkles size={28} />} title="No conversations yet" description="Start a new chat to get help from Saarthi." />
                     ) : (

@@ -1,36 +1,11 @@
 import { useState, useEffect } from 'react';
 import {
-    BarChart3, TrendingUp, Target, Clock, Award, BookOpen,
-    Flame, Calendar, Trophy, MonitorPlay, CheckCircle2,
-    TerminalSquare, Users, Loader2, Medal,
+    BarChart3, Target, Clock, Award, BookOpen,
+    Flame, Users, Loader2, Medal,
 } from 'lucide-react';
-import { api } from '../lib/api';
+import { api, type ProgressResponse } from '../lib/api';
+import { usePageTitle } from '../lib/usePageTitle';
 import './Progress.css';
-
-// ── Static demo data ──────────────────────────────────────────────────────────
-
-const weeklyData = [
-    { day: 'Mon', hours: 2.5 }, { day: 'Tue', hours: 3.0 }, { day: 'Wed', hours: 1.5 },
-    { day: 'Thu', hours: 4.0 }, { day: 'Fri', hours: 2.0 }, { day: 'Sat', hours: 5.5 }, { day: 'Sun', hours: 3.5 },
-];
-
-const subjectMastery = [
-    { subject: 'Digital Signal Processing', progress: 72, color: '#6EAFA4', quizAvg: 78, time: '18h' },
-    { subject: 'Machine Learning',           progress: 55, color: '#8FA3C2', quizAvg: 82, time: '14h' },
-    { subject: 'Data Structures',            progress: 88, color: '#B59A63', quizAvg: 91, time: '24h' },
-    { subject: 'Pattern Recognition',        progress: 35, color: '#9AA8BD', quizAvg: 65, time: '8h'  },
-    { subject: 'Signals & Systems',          progress: 60, color: '#7B93B4', quizAvg: 74, time: '12h' },
-];
-
-const recentActivity = [
-    { type: 'quiz',   title: 'Scored 92% on ML Quiz #4',          time: '2 hours ago',  icon: Trophy        },
-    { type: 'video',  title: 'Watched: Fourier Transform Deep Dive', time: '5 hours ago', icon: MonitorPlay   },
-    { type: 'course', title: 'Completed DSP Module 4',             time: 'Yesterday',    icon: CheckCircle2  },
-    { type: 'code',   title: 'Solved: Binary Search Problem',      time: 'Yesterday',    icon: TerminalSquare},
-    { type: 'streak', title: '5-Day Study Streak!',                time: '2 days ago',   icon: Flame         },
-];
-
-const maxHours = Math.max(...weeklyData.map((d) => d.hours));
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -143,13 +118,16 @@ function PeerComparisonWidget() {
     const [data, setData] = useState<PeerComparison | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [retryCount, setRetryCount] = useState(0);
 
     useEffect(() => {
+        setLoading(true);
+        setError('');
         api.get<PeerComparison>('/quizzes/peer-comparison')
             .then(setData)
             .catch(e => setError(e?.message || 'Could not load peer data.'))
             .finally(() => setLoading(false));
-    }, []);
+    }, [retryCount]);
 
     const rankLabel = (p: number) =>
         p >= 90 ? 'Top 10%' : p >= 75 ? 'Top 25%' : p >= 50 ? 'Above Average' : p >= 25 ? 'Below Average' : 'Bottom 25%';
@@ -168,10 +146,11 @@ function PeerComparisonWidget() {
             )}
 
             {error && !loading && (
-                <div className="peer-empty">
-                    <Medal size={36} style={{ color: 'var(--text-muted)' }} />
-                    <p>Complete at least one quiz to unlock peer comparison.</p>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{error}</span>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', padding: '3rem', textAlign: 'center' }}>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{error}</p>
+                    <button className="btn btn-primary btn-sm" onClick={() => setRetryCount(c => c + 1)}>
+                        Try again
+                    </button>
                 </div>
             )}
 
@@ -224,6 +203,24 @@ function PeerComparisonWidget() {
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function ProgressPage() {
+    usePageTitle('Progress');
+    const [progress, setProgress] = useState<ProgressResponse | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [retryCount, setRetryCount] = useState(0);
+
+    useEffect(() => {
+        setLoading(true);
+        setError(null);
+        api.get<ProgressResponse>('/users/me/progress')
+            .then(setProgress)
+            .catch(e => setError(e?.message || 'Could not load progress data.'))
+            .finally(() => setLoading(false));
+    }, [retryCount]);
+
+    const val = (v: number | string | undefined, fallback = '–') =>
+        loading ? '–' : v !== undefined ? String(v) : fallback;
+
     return (
         <div className="progress-page">
             <div className="progress-header animate-fade-in">
@@ -231,83 +228,26 @@ export default function ProgressPage() {
                 <p>Track your progress across all subjects</p>
             </div>
 
+            {error && !progress && (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', padding: '3rem', textAlign: 'center' }}>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{error}</p>
+                    <button className="btn btn-primary btn-sm" onClick={() => setRetryCount(c => c + 1)}>
+                        Try again
+                    </button>
+                </div>
+            )}
+
             {/* Stats Row */}
             <div className="progress-stats animate-fade-in delay-100">
-                <div className="progress-stat-card"><div className="progress-stat-icon" style={{ background: 'rgba(143, 163, 194, 0.14)', color: '#8FA3C2' }}><BookOpen size={22} /></div><div><span className="progress-stat-val">5</span><span className="progress-stat-lbl">Courses</span></div></div>
-                <div className="progress-stat-card"><div className="progress-stat-icon" style={{ background: 'rgba(110, 175, 164, 0.14)', color: '#6EAFA4' }}><Award size={22} /></div><div><span className="progress-stat-val">18</span><span className="progress-stat-lbl">Quizzes</span></div></div>
-                <div className="progress-stat-card"><div className="progress-stat-icon" style={{ background: 'rgba(181, 154, 99, 0.14)', color: '#B59A63' }}><Target size={22} /></div><div><span className="progress-stat-val">82%</span><span className="progress-stat-lbl">Avg Score</span></div></div>
-                <div className="progress-stat-card"><div className="progress-stat-icon" style={{ background: 'rgba(123, 147, 180, 0.14)', color: '#7B93B4' }}><Clock size={22} /></div><div><span className="progress-stat-val">76h</span><span className="progress-stat-lbl">Study Time</span></div></div>
-                <div className="progress-stat-card"><div className="progress-stat-icon" style={{ background: 'rgba(181, 154, 99, 0.14)', color: '#B59A63' }}><Flame size={22} /></div><div><span className="progress-stat-val">5</span><span className="progress-stat-lbl">Day Streak</span></div></div>
-            </div>
-
-            <div className="progress-grid">
-                {/* Weekly Study Chart */}
-                <div className="progress-section animate-fade-in delay-200">
-                    <h3><BarChart3 size={18} /> Weekly Study Hours</h3>
-                    <div className="progress-chart">
-                        {weeklyData.map((d, i) => (
-                            <div key={i} className="progress-chart-col">
-                                <div className="progress-chart-bar-wrapper">
-                                    <div className="progress-chart-bar" style={{ height: `${(d.hours / maxHours) * 100}%` }}>
-                                        <span className="progress-chart-value">{d.hours}h</span>
-                                    </div>
-                                </div>
-                                <span className="progress-chart-label">{d.day}</span>
-                            </div>
-                        ))}
-                    </div>
-                    <div className="progress-chart-summary">
-                        <span><TrendingUp size={14} /> Total: {weeklyData.reduce((s, d) => s + d.hours, 0)}h this week</span>
-                    </div>
-                </div>
-
-                {/* Recent Activity */}
-                <div className="progress-section animate-fade-in delay-300">
-                    <h3><Calendar size={18} /> Recent Activity</h3>
-                    <div className="progress-activity-list">
-                        {recentActivity.map((a, i) => {
-                            const Icon = a.icon;
-                            return (
-                                <div key={i} className="progress-activity-item">
-                                    <span className="progress-activity-icon"><Icon size={16} /></span>
-                                    <div className="progress-activity-info">
-                                        <span className="progress-activity-title">{a.title}</span>
-                                        <span className="progress-activity-time">{a.time}</span>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
+                <div className="progress-stat-card"><div className="progress-stat-icon" style={{ background: 'rgba(143, 163, 194, 0.14)', color: '#8FA3C2' }}><BookOpen size={22} /></div><div><span className="progress-stat-val">{val(progress?.coursesEnrolled)}</span><span className="progress-stat-lbl">Courses</span></div></div>
+                <div className="progress-stat-card"><div className="progress-stat-icon" style={{ background: 'rgba(110, 175, 164, 0.14)', color: '#6EAFA4' }}><Award size={22} /></div><div><span className="progress-stat-val">{val(progress?.pendingAssignments)}</span><span className="progress-stat-lbl">Pending</span></div></div>
+                <div className="progress-stat-card"><div className="progress-stat-icon" style={{ background: 'rgba(181, 154, 99, 0.14)', color: '#B59A63' }}><Target size={22} /></div><div><span className="progress-stat-val">{loading ? '–' : `${progress?.avgQuizScorePercent ?? 0}%`}</span><span className="progress-stat-lbl">Avg Score</span></div></div>
+                <div className="progress-stat-card"><div className="progress-stat-icon" style={{ background: 'rgba(123, 147, 180, 0.14)', color: '#7B93B4' }}><Clock size={22} /></div><div><span className="progress-stat-val">{loading ? '–' : `${progress?.studyTimeHours ?? 0}h`}</span><span className="progress-stat-lbl">Study Time</span></div></div>
+                <div className="progress-stat-card"><div className="progress-stat-icon" style={{ background: 'rgba(181, 154, 99, 0.14)', color: '#B59A63' }}><Flame size={22} /></div><div><span className="progress-stat-val">{val(progress?.streakDays)}</span><span className="progress-stat-lbl">Day Streak</span></div></div>
             </div>
 
             {/* Peer Comparison — live from API */}
             <PeerComparisonWidget />
-
-            {/* Subject Mastery */}
-            <div className="progress-section animate-fade-in delay-400">
-                <h3><Target size={18} /> Subject Mastery</h3>
-                <div className="progress-mastery-list">
-                    {subjectMastery.map((s, i) => (
-                        <div key={i} className="progress-mastery-item">
-                            <div className="progress-mastery-info">
-                                <div className="progress-mastery-color" style={{ background: s.color }} />
-                                <span className="progress-mastery-name">{s.subject}</span>
-                            </div>
-                            <div className="progress-mastery-bar-wrapper">
-                                <div className="progress-bar" style={{ flex: 1 }}>
-                                    <div className="progress-bar-fill" style={{ width: `${s.progress}%`, background: s.color }} />
-                                </div>
-                                <span className="progress-mastery-pct">{s.progress}%</span>
-                            </div>
-                            <div className="progress-mastery-stats">
-                                <span>Quiz Avg: {s.quizAvg}%</span>
-                                <span>Time: {s.time}</span>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
         </div>
     );
 }

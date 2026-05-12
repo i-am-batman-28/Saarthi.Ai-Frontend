@@ -391,3 +391,121 @@
         padding: 1.5rem;
     }
 }
+/* ================================================
+   FORGOT PASSWORD PAGE
+   ================================================ */
+.forgot-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--background);
+    padding: 1.5rem;
+}
+
+.forgot-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl, 1.25rem);
+    padding: 2.5rem 2rem;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+    text-align: center;
+}
+
+.forgot-logo {
+    width: 48px;
+    height: 48px;
+    border-radius: 0.875rem;
+    background: rgba(15, 118, 110, 0.1);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+}
+
+.forgot-title {
+    font-size: 1.375rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: -0.025em;
+    margin: 0 0 0.5rem;
+}
+
+.forgot-sub {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin: 0 0 1.5rem;
+    line-height: 1.55;
+}
+
+.forgot-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.forgot-success {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+}
+
+.forgot-success-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: rgba(15, 118, 110, 0.1);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.25rem;
+}
+
+.forgot-success h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.forgot-success p {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin: 0;
+}
+
+.forgot-success-hint {
+    font-size: 0.8125rem !important;
+}
+
+.forgot-resend-btn {
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-size: inherit;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+}
+
+.forgot-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    margin-top: 1.5rem;
+    transition: color 0.15s;
+}
+
+.forgot-back:hover {
+    color: var(--text-primary);
+}

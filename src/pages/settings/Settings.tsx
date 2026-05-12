@@ -6,6 +6,7 @@ import {
 import { useAuthStore } from '../../stores/auth.store';
 import { useSettingsStore } from '../../stores/settings.store';
 import { getInitials } from '../../lib/utils';
+import { usePageTitle } from '../../lib/usePageTitle';
 import './Settings.css';
 
 const tabs = [
@@ -16,6 +17,7 @@ const tabs = [
 ];
 
 export default function SettingsPage() {
+    usePageTitle('Settings');
     const { user, logout } = useAuthStore();
     const { theme, fontSize, setTheme, setFontSize } = useSettingsStore();
     const [activeTab, setActiveTab] = useState('profile');
@@ -24,8 +26,8 @@ export default function SettingsPage() {
     // Profile form state
     const [profileName, setProfileName] = useState(user?.name || user?.fullName || '');
     const [profileEmail] = useState(user?.email || '');
-    const [profileBio, setProfileBio] = useState('Computer Science Student | AI Enthusiast');
-    const [profileInstitute, setProfileInstitute] = useState('NIT Raipur');
+    const [profileBio, setProfileBio] = useState('');
+    const [profileInstitute, setProfileInstitute] = useState('');
 
     // Notification toggles
     const [notifCourseUpdates, setNotifCourseUpdates] = useState(true);
@@ -119,7 +121,7 @@ export default function SettingsPage() {
 
                             <div className="settings-actions">
                                 <button className="btn btn-primary" onClick={handleSave}>
-                                    <Save size={16} /> {saved ? 'Saved ✓' : 'Save Changes'}
+                                    <Save size={16} /> {saved ? 'Saved' : 'Save Changes'}
                                 </button>
                             </div>
                         </div>

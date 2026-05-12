@@ -1,28 +1,15 @@
 import { useEffect, useState } from 'react';
 import {
     BookOpen, ClipboardList, BarChart3, Clock, Flame,
-    ArrowRight, ChevronRight, Sparkles, Play, FileText, Award,
-    CalendarDays, Loader2, RefreshCw,
+    ChevronRight, CalendarDays, Loader2, RefreshCw,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/auth.store';
 import { api, type ProgressResponse, type EnrollmentWithCourseResponse, type PaginatedResponse } from '../lib/api';
+import { usePageTitle } from '../lib/usePageTitle';
 import EmptyState from '../components/EmptyState';
 import './Dashboard.css';
 
-const deadlines = [
-    { id: 1, title: 'DSP Assignment #3 - FFT Implementation', course: 'Digital Signal Processing', due: '2026-02-14', urgency: 'high' as const, type: 'assignment' as const },
-    { id: 2, title: 'ML Quiz - Neural Networks', course: 'Machine Learning', due: '2026-02-15', urgency: 'high' as const, type: 'quiz' as const },
-    { id: 3, title: 'Binary Tree Problems Set', course: 'Data Structures', due: '2026-02-18', urgency: 'medium' as const, type: 'assignment' as const },
-    { id: 4, title: 'Pattern Recognition Report', course: 'Pattern Recognition', due: '2026-02-22', urgency: 'low' as const, type: 'assignment' as const },
-];
-
-const recommended = [
-    { id: 1, title: 'Fourier Transform Deep Dive', type: 'video', icon: Play, duration: '25 min' },
-    { id: 2, title: 'Gradient Descent Explained', type: 'note', icon: FileText, duration: '10 min read' },
-    { id: 3, title: 'Graph Algorithms Quiz', type: 'quiz', icon: Award, duration: '15 questions' },
-    { id: 4, title: 'Convolution Neural Networks', type: 'video', icon: Play, duration: '32 min' },
-];
 
 function getUrgencyInfo(urgency: string) {
     switch (urgency) {
@@ -37,6 +24,7 @@ interface StudyPlanDay { day: string; sessions: string[]; totalHours: number; }
 interface StudyPlan { weekPlan: StudyPlanDay[]; summary: string; priorityTopics: string[]; generatedAt: string; }
 
 export default function DashboardPage() {
+    usePageTitle('Dashboard');
     const { user } = useAuthStore();
     const navigate = useNavigate();
     const [progress, setProgress] = useState<ProgressResponse | null>(null);
@@ -95,16 +83,16 @@ export default function DashboardPage() {
 
     const statsCards = progress
         ? [
-            { label: 'Courses Enrolled', value: String(progress.coursesEnrolled), icon: BookOpen, color: '#8FA3C2', bg: 'rgba(143, 163, 194, 0.14)', change: '' },
-            { label: 'Pending Assignments', value: String(progress.pendingAssignments), icon: ClipboardList, color: '#9AA8BD', bg: 'rgba(154, 168, 189, 0.14)', change: progress.pendingAssignments > 0 ? 'Due' : '' },
-            { label: 'Avg Quiz Score', value: `${progress.avgQuizScorePercent}%`, icon: BarChart3, color: '#6EAFA4', bg: 'rgba(110, 175, 164, 0.14)', change: '' },
-            { label: 'Study Time', value: `${progress.studyTimeHours}h`, icon: Clock, color: '#8FA3C2', bg: 'rgba(143, 163, 194, 0.14)', change: 'Total' },
+            { label: 'Courses Enrolled', value: String(progress.coursesEnrolled), icon: BookOpen, color: '#0F766E', bg: 'rgba(15, 118, 110, 0.1)', change: '' },
+            { label: 'Pending Assignments', value: String(progress.pendingAssignments), icon: ClipboardList, color: '#9AA8BD', bg: 'rgba(154, 168, 189, 0.12)', change: progress.pendingAssignments > 0 ? 'Due' : '' },
+            { label: 'Avg Quiz Score', value: `${progress.avgQuizScorePercent}%`, icon: BarChart3, color: '#0F766E', bg: 'rgba(15, 118, 110, 0.1)', change: '' },
+            { label: 'Study Time', value: `${progress.studyTimeHours}h`, icon: Clock, color: '#9AA8BD', bg: 'rgba(154, 168, 189, 0.12)', change: 'Total' },
         ]
         : [
-            { label: 'Courses Enrolled', value: '–', icon: BookOpen, color: '#8FA3C2', bg: 'rgba(143, 163, 194, 0.14)', change: '' },
-            { label: 'Pending Assignments', value: '–', icon: ClipboardList, color: '#9AA8BD', bg: 'rgba(154, 168, 189, 0.14)', change: '' },
-            { label: 'Avg Quiz Score', value: '–', icon: BarChart3, color: '#6EAFA4', bg: 'rgba(110, 175, 164, 0.14)', change: '' },
-            { label: 'Study Time', value: '–', icon: Clock, color: '#8FA3C2', bg: 'rgba(143, 163, 194, 0.14)', change: '' },
+            { label: 'Courses Enrolled', value: '–', icon: BookOpen, color: '#0F766E', bg: 'rgba(15, 118, 110, 0.1)', change: '' },
+            { label: 'Pending Assignments', value: '–', icon: ClipboardList, color: '#9AA8BD', bg: 'rgba(154, 168, 189, 0.12)', change: '' },
+            { label: 'Avg Quiz Score', value: '–', icon: BarChart3, color: '#0F766E', bg: 'rgba(15, 118, 110, 0.1)', change: '' },
+            { label: 'Study Time', value: '–', icon: Clock, color: '#9AA8BD', bg: 'rgba(154, 168, 189, 0.12)', change: '' },
         ];
 
     return (
@@ -117,14 +105,14 @@ export default function DashboardPage() {
             {/* Welcome Header */}
             <div className="dash-welcome animate-fade-in">
                 <div>
-                    <h1 className="dash-welcome-title">Welcome back, {user?.name || 'Student'}! 👋</h1>
-                    <p className="dash-welcome-sub">Let's continue your learning journey today</p>
+                    <h1 className="dash-welcome-title">Welcome back, {user?.name || 'Student'}</h1>
+                    <p className="dash-welcome-sub">Here's your learning overview for today</p>
                 </div>
                 <div className="dash-streak-card">
                     <Flame size={20} className="dash-streak-icon" />
                     <div>
                         <span className="dash-streak-value">{progress ? `${progress.streakDays} Day Streak` : '–'}</span>
-                        <span className="dash-streak-label">{progress?.streakDays ? 'Keep it up! 🔥' : 'Start studying to build a streak'}</span>
+                        <span className="dash-streak-label">{progress?.streakDays ? 'Current streak' : 'Start studying to build a streak'}</span>
                     </div>
                 </div>
             </div>
@@ -213,24 +201,11 @@ export default function DashboardPage() {
                         <h2>Upcoming Deadlines</h2>
                     </div>
                     <div className="dash-deadlines">
-                        {deadlines.map((dl) => {
-                            const info = getUrgencyInfo(dl.urgency);
-                            return (
-                                <div key={dl.id} className="dash-deadline-item">
-                                    <div className="dash-deadline-icon" style={{ background: info.bg, color: info.color }}>
-                                        {dl.type === 'quiz' ? <Award size={18} /> : <ClipboardList size={18} />}
-                                    </div>
-                                    <div className="dash-deadline-info">
-                                        <h4>{dl.title}</h4>
-                                        <span>{dl.course}</span>
-                                    </div>
-                                    <div className="dash-deadline-due">
-                                        <span className="badge" style={{ background: info.bg, color: info.color }}>{info.label}</span>
-                                        <span className="dash-deadline-date">{new Date(dl.due).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}</span>
-                                    </div>
-                                </div>
-                            );
-                        })}
+                        <EmptyState
+                            icon={<CalendarDays size={28} />}
+                            title="No upcoming deadlines"
+                            description="Deadlines from your enrolled courses will appear here."
+                        />
                     </div>
                 </div>
             </div>
@@ -238,7 +213,7 @@ export default function DashboardPage() {
             {/* Study Plan */}
             <div className="dash-section dash-study-plan animate-fade-in delay-350">
                 <div className="dash-section-header">
-                    <h2><CalendarDays size={20} style={{ color: 'var(--accent)' }} /> AI Study Plan</h2>
+                    <h2><CalendarDays size={20} style={{ color: 'var(--accent)' }} /> Study Plan</h2>
                     <button
                         className="btn btn-ghost btn-sm"
                         onClick={generateStudyPlan}
@@ -248,7 +223,7 @@ export default function DashboardPage() {
                             ? <><Loader2 size={14} className="animate-spin" /> Generating...</>
                             : studyPlan
                                 ? <><RefreshCw size={14} /> Regenerate</>
-                                : <><Sparkles size={14} /> Generate Plan</>
+                                : <><CalendarDays size={14} /> Generate Plan</>
                         }
                     </button>
                 </div>
@@ -258,7 +233,7 @@ export default function DashboardPage() {
                         <CalendarDays size={32} strokeWidth={1.2} />
                         <p>Get a personalized 7-day study schedule based on your courses, deadlines, and quiz performance.</p>
                         <button className="btn btn-primary btn-sm" onClick={generateStudyPlan}>
-                            <Sparkles size={14} /> Generate My Study Plan
+                            <CalendarDays size={14} /> Generate My Study Plan
                         </button>
                     </div>
                 )}
@@ -307,28 +282,8 @@ export default function DashboardPage() {
                 )}
             </div>
 
-            {/* Recommended */}
-            <div className="dash-section animate-fade-in delay-400">
-                <div className="dash-section-header">
-                    <h2><Sparkles size={20} style={{ color: 'var(--accent)' }} /> Recommended for You</h2>
-                    <button className="btn btn-ghost btn-sm">View All <ChevronRight size={14} /></button>
-                </div>
-                <div className="dash-recommended">
-                    {recommended.map((item) => {
-                        const Icon = item.icon;
-                        return (
-                            <div key={item.id} className="dash-rec-card">
-                                <div className="dash-rec-icon"><Icon size={20} /></div>
-                                <h4>{item.title}</h4>
-                                <span className="dash-rec-meta">{item.duration}</span>
-                                <button className="btn btn-sm btn-secondary" style={{ marginTop: 'auto' }}>
-                                    Start <ArrowRight size={14} />
-                                </button>
-                            </div>
-                        );
-                    })}
-                </div>
-            </div>
+            {/* Study Plan */}
+
         </div>
     );
 }

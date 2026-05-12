@@ -3,9 +3,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, User, Building2, Brain, Code2, BarChart3, GraduationCap } from 'lucide-react';
 import { useAuthStore } from '../../stores/auth.store';
 import { LogoIcon } from '../../components/LogoIcon';
+import { usePageTitle } from '../../lib/usePageTitle';
 import './Auth.css';
 
 export default function SignupPage() {
+    usePageTitle('Create Account');
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -187,6 +189,12 @@ export default function SignupPage() {
 
                     <p className="auth-footer-text">
                         Already have an account? <Link to="/login" className="auth-link-bold">Sign In</Link>
+                    </p>
+                    <p style={{ textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '1rem' }}>
+                        By continuing, you agree to our{' '}
+                        <Link to="/legal/terms" style={{ color: 'var(--text-muted)', textDecoration: 'underline' }}>Terms</Link>
+                        {' '}and{' '}
+                        <Link to="/legal/privacy" style={{ color: 'var(--text-muted)', textDecoration: 'underline' }}>Privacy Policy</Link>.
                     </p>
                 </div>
             </div>

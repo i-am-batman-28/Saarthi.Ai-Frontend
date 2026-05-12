@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Play, Clock, BookOpen, Search, Plus, X, Save, Trash2 } from 'lucide-react';
 import { useAuthStore } from '../stores/auth.store';
 import { api, getUploadFullUrl, type VideoResponse, type PaginatedResponse, type CourseResponse } from '../lib/api';
+import { usePageTitle } from '../lib/usePageTitle';
 import Pagination from '../components/Pagination';
 import FileDropzone from '../components/FileDropzone';
 import ConfirmModal from '../components/ConfirmModal';
@@ -25,6 +26,7 @@ function youtubeEmbedUrl(watchOrEmbedUrl: string): string | null {
 }
 
 export default function VideosPage() {
+    usePageTitle('Video Library');
     const { user } = useAuthStore();
     const isInstructor = user?.role === 'admin' || user?.role === 'teacher';
 
@@ -34,6 +36,7 @@ export default function VideosPage() {
     const [offset, setOffset] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [retryCount, setRetryCount] = useState(0);
     const [showAddModal, setShowAddModal] = useState(false);
     const [courses, setCourses] = useState<CourseResponse[]>([]);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -83,7 +86,7 @@ export default function VideosPage() {
                 setVideos(r.items || []);
                 setTotal(r.total ?? 0);
             });
-    }, [offset]);
+    }, [offset, retryCount]);
 
     useEffect(() => {
         let cancelled = false;
@@ -109,7 +112,7 @@ export default function VideosPage() {
 
     return (
         <div className="videos-page">
-            {error && <div className="videos-error" role="alert">{error}</div>}
+            {error && videos.length > 0 && <div className="videos-error" role="alert">{error}</div>}
             <div className="videos-header animate-fade-in">
                 <div>
                     <h1>Video Library</h1>
@@ -145,8 +148,25 @@ export default function VideosPage() {
                 </div>
             )}
 
-            {loading && videos.length === 0 ? (
-                <div className="videos-loading">Loading videos…</div>
+            {error && !loading && videos.length === 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', padding: '3rem', textAlign: 'center' }}>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{error}</p>
+                    <button className="btn btn-primary btn-sm" onClick={() => setRetryCount(c => c + 1)}>
+                        Try again
+                    </button>
+                </div>
+            ) : loading && videos.length === 0 ? (
+                <div className="videos-grid">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                        <div key={i} style={{ borderRadius: '0.75rem', overflow: 'hidden', background: 'var(--card-bg)', border: '1px solid var(--border)' }}>
+                            <div className="skeleton" style={{ height: '160px' }} />
+                            <div style={{ padding: '0.875rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                <div className="skeleton" style={{ height: '1rem', width: '80%', borderRadius: '0.375rem' }} />
+                                <div className="skeleton" style={{ height: '0.75rem', width: '50%', borderRadius: '0.375rem' }} />
+                            </div>
+                        </div>
+                    ))}
+                </div>
             ) : !loading && filtered.length === 0 ? (
                 <div className="videos-empty">
                     <div className="videos-empty-icon">🎬</div>

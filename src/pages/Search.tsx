@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { BookOpen, FileText, Play, ExternalLink } from 'lucide-react';
 import { api, type SearchResponse } from '../lib/api';
+import { usePageTitle } from '../lib/usePageTitle';
 import Pagination from '../components/Pagination';
 import './Search.css';
 
 export default function SearchPage() {
+    usePageTitle('Search');
     const [searchParams, setSearchParams] = useSearchParams();
     const q = searchParams.get('q') ?? '';
     const offset = Math.max(0, parseInt(searchParams.get('offset') ?? '0', 10));

@@ -391,6 +391,10 @@
         grid-template-columns: 1fr 1fr;
     }
 
+    .dash-grid {
+        grid-template-columns: 1fr;
+    }
+
     .dash-recommended {
         grid-template-columns: 1fr;
     }

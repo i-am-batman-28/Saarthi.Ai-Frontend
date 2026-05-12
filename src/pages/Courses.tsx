@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { usePageTitle } from '../lib/usePageTitle';
 import {
     Search, Filter, Grid3X3, List, BookOpen, Clock, Users, Star,
     ChevronDown, Plus, Edit3, Trash2, X, Save, BarChart3
@@ -49,6 +50,7 @@ const difficulties = ['All', 'Beginner', 'Intermediate', 'Advanced'];
 const PAGE_SIZE = 20;
 
 export default function CoursesPage() {
+    usePageTitle('Courses');
     const { user } = useAuthStore();
     const isAdmin = user?.role === 'admin';
     const isInstructor = isAdmin || user?.role === 'teacher';

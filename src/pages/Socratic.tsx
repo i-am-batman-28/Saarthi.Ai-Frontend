@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { MessageCircle, Send, Sparkles, Loader2, ChevronDown, RotateCcw, Lightbulb, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
 import { api } from '../lib/api';
+import { usePageTitle } from '../lib/usePageTitle';
 import './Socratic.css';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -112,6 +113,7 @@ function UserBubble({ claim }: { claim: string }) {
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function SocraticPage() {
+    usePageTitle('Socratic Mode');
     const [topic, setTopic] = useState('');
     const [difficulty, setDifficulty] = useState<Difficulty>('moderate');
     const [claim, setClaim] = useState('');

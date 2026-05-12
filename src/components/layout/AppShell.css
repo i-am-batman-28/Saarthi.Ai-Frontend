@@ -8,7 +8,7 @@
 
 .app-main {
     flex: 1;
-    margin-left: 260px;
+    margin-left: 240px;
     display: flex;
     flex-direction: column;
     min-height: 100vh;
@@ -18,7 +18,7 @@
 
 .sidebar-collapsed~.app-main,
 .sidebar-collapsed+.app-main {
-    margin-left: 72px;
+    margin-left: 64px;
 }
 
 .app-content {
@@ -35,5 +35,6 @@
 
     .app-content {
         padding: 1rem;
+        padding-bottom: calc(1rem + 60px + env(safe-area-inset-bottom));
     }
 }

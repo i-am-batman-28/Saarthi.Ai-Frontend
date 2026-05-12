@@ -61,17 +61,18 @@
   --gray-950: #030712;
 
   /* Semantic */
-  --background: #F9FAFB;
-  --foreground: #111827;
+  --background: #F5F7FA;
+  --foreground: #0D1117;
   --card-bg: #FFFFFF;
-  --input-bg: #F9FAFB;
-  --border: #E5E7EB;
+  --input-bg: #FFFFFF;
+  --border: #E8ECF2;
+  --border-subtle: #F0F3F8;
   --surface-1: #FFFFFF;
-  --surface-2: #F8FAFC;
-  --surface-3: #F1F5F9;
-  --text-primary: #111827;
-  --text-secondary: #4B5563;
-  --text-muted: #6B7280;
+  --surface-2: #F5F7FA;
+  --surface-3: #EDF0F5;
+  --text-primary: #0D1117;
+  --text-secondary: #4A5568;
+  --text-muted: #718096;
   --ring: var(--primary);
   --ring-rgb: 29, 53, 87;
 
@@ -95,14 +96,15 @@
    DARK THEME
    ================================================ */
 [data-theme='dark'] {
-  --background: #070A0F;
-  --foreground: #F3F7FF;
-  --card-bg: #141B24;
-  --input-bg: #10151D;
-  --border: #273142;
-  --surface-1: #141B24;
-  --surface-2: #10151D;
-  --surface-3: #1A2230;
+  --background: #0C1018;
+  --foreground: #EDF2F7;
+  --card-bg: #141C26;
+  --input-bg: #111820;
+  --border: #1E2A3A;
+  --border-subtle: #192230;
+  --surface-1: #141C26;
+  --surface-2: #111820;
+  --surface-3: #1A2332;
   --text-primary: #F3F7FF;
   --text-secondary: #C7D2E5;
   --text-muted: #94A3B8;
@@ -584,34 +586,42 @@ h5,
 h6 {
   font-weight: 700;
   line-height: 1.2;
-  color: var(--gray-900);
+  color: var(--text-primary);
   margin: 0;
 }
 
 h1 {
-  font-size: 2.5rem;
-  letter-spacing: -0.025em;
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
 }
 
 h2 {
-  font-size: 2rem;
+  font-size: 1.5rem;
+  font-weight: 800;
   letter-spacing: -0.025em;
 }
 
 h3 {
-  font-size: 1.5rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
 }
 
 h4 {
-  font-size: 1.25rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 h5 {
-  font-size: 1.125rem;
+  font-size: 0.875rem;
+  font-weight: 600;
 }
 
 h6 {
-  font-size: 1rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
 }
 
 p {
@@ -831,17 +841,22 @@ p {
   gap: 0.5rem;
   padding: 0.625rem 1.25rem;
   border-radius: var(--radius);
-  font-weight: 500;
-  font-size: 0.9375rem;
+  font-weight: 600;
+  font-size: 0.875rem;
   border: none;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
   white-space: nowrap;
   text-decoration: none;
+  letter-spacing: -0.01em;
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .btn:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
@@ -953,13 +968,15 @@ a:focus-visible {
 .card {
   background: var(--card-bg);
   border-radius: var(--radius-lg);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-subtle, var(--border));
+  box-shadow: var(--shadow-sm);
   overflow: hidden;
-  transition: all 0.2s ease;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .card:hover {
   box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
 }
 
 .card-body {
@@ -979,8 +996,9 @@ a:focus-visible {
 }
 
 .input:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(var(--ring-rgb), 0.14);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+  outline: none;
 }
 
 .input::placeholder {
@@ -1035,8 +1053,8 @@ a:focus-visible {
 /* Progress Bar */
 .progress-bar {
   width: 100%;
-  height: 0.5rem;
-  background: var(--gray-200);
+  height: 6px;
+  background: var(--surface-3);
   border-radius: var(--radius-full);
   overflow: hidden;
 }
@@ -1044,8 +1062,13 @@ a:focus-visible {
 .progress-bar-fill {
   height: 100%;
   border-radius: var(--radius-full);
-  background: linear-gradient(90deg, var(--primary), var(--accent-dark));
-  transition: width 0.6s ease;
+  background: linear-gradient(90deg, var(--accent), var(--accent-light));
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: progressIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes progressIn {
+  from { width: 0 !important; }
 }
 
 /* Avatar */
@@ -1054,11 +1077,12 @@ a:focus-visible {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  font-weight: 600;
+  font-weight: 700;
   color: white;
-  background: linear-gradient(135deg, var(--primary), var(--accent-dark));
+  background: linear-gradient(135deg, var(--accent-dark), var(--accent));
   overflow: hidden;
   flex-shrink: 0;
+  letter-spacing: -0.02em;
 }
 
 .avatar-sm {
@@ -1111,11 +1135,12 @@ a:focus-visible {
 }
 
 .tab:hover {
-  color: var(--primary);
+  color: var(--accent);
 }
 
 .tab.active {
-  color: var(--primary);
+  color: var(--accent);
+  font-weight: 600;
 }
 
 .tab.active::after {
@@ -1125,7 +1150,7 @@ a:focus-visible {
   left: 0;
   right: 0;
   height: 2px;
-  background: var(--primary);
+  background: var(--accent);
   border-radius: 1px 1px 0 0;
 }
 
@@ -1160,7 +1185,62 @@ a:focus-visible {
 }
 
 .toggle.active {
-  background: var(--primary);
+  background: var(--accent);
+}
+
+/* ================================================
+   PAGE TRANSITION
+   ================================================ */
+.app-content > * {
+  animation: pageEnter 0.18s ease-out both;
+}
+
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ================================================
+   SCROLLBAR — DARK MODE
+   ================================================ */
+[data-theme='dark'] ::-webkit-scrollbar-track {
+  background: var(--surface-2);
+}
+
+[data-theme='dark'] ::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+[data-theme='dark'] ::-webkit-scrollbar-thumb:hover {
+  background: var(--gray-300);
+}
+
+/* ================================================
+   ACCENT THREAD — focus rings always teal
+   ================================================ */
+.btn:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
 }
 
 .toggle::after {

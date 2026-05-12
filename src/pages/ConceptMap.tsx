@@ -16,6 +16,7 @@ import {
 import '@xyflow/react/dist/style.css';
 import { Network, Loader2, Sparkles, AlertCircle, Info, X } from 'lucide-react';
 import { api } from '../lib/api';
+import { usePageTitle } from '../lib/usePageTitle';
 import './ConceptMap.css';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -246,6 +247,7 @@ function DetailPanel({ detail, onClose }: { detail: DetailPanel; onClose: () => 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function ConceptMapPage() {
+    usePageTitle('Concept Map');
     const [courseTitle, setCourseTitle] = useState('');
     const [conceptNodes, setConceptNodes] = useState<ConceptNode[]>([]);
     const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);

@@ -2,10 +2,12 @@ import { useEffect, type ReactElement } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import AppShell from './components/layout/AppShell';
 import AIChatbot from './components/AIChatbot';
-import { ToastProvider } from './components/Toast';
+import { ToastProvider, useToast } from './components/Toast';
+import ErrorBoundary from './components/ErrorBoundary';
 import LandingPage from './pages/Landing';
 import LoginPage from './pages/auth/Login';
 import SignupPage from './pages/auth/Signup';
+import ForgotPasswordPage from './pages/auth/ForgotPassword';
 import DashboardPage from './pages/Dashboard';
 import CoursesPage from './pages/Courses';
 import CourseDetailPage from './pages/CourseDetail';
@@ -25,28 +27,43 @@ import ConceptMapPage from './pages/ConceptMap';
 import ExamPrepPage from './pages/ExamPrep';
 import SocraticPage from './pages/Socratic';
 import JoinCoursePage from './pages/JoinCourse';
+import NotFoundPage from './pages/NotFound';
+import LegalPage from './pages/Legal';
 import { useAuthStore } from './stores/auth.store';
 import './stores/settings.store'; // Initialize settings (theme/font) on load
 
-function App() {
-  const restoreSession = useAuthStore((s) => s.restoreSession);
+function SessionWatcher() {
   const clearSession = useAuthStore((s) => s.clearSession);
+  const { showToast } = useToast();
   useEffect(() => {
-    restoreSession();
-    const onAuthExpired = () => clearSession();
+    const onAuthExpired = () => {
+      showToast('Your session has expired. Please sign in again.', 'error');
+      setTimeout(() => clearSession(), 1500);
+    };
     window.addEventListener('saarthi:auth-expired', onAuthExpired);
     return () => window.removeEventListener('saarthi:auth-expired', onAuthExpired);
-  }, [restoreSession, clearSession]);
+  }, [clearSession, showToast]);
+  return null;
+}
+
+function App() {
+  const restoreSession = useAuthStore((s) => s.restoreSession);
+  useEffect(() => {
+    restoreSession();
+  }, [restoreSession]);
 
   return (
     <BrowserRouter>
       <ToastProvider>
+      <SessionWatcher />
+      <ErrorBoundary>
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/join" element={<JoinCoursePage />} />
         <Route path="/login" element={<PublicOnly><LoginPage /></PublicOnly>} />
         <Route path="/signup" element={<PublicOnly><SignupPage /></PublicOnly>} />
+        <Route path="/forgot-password" element={<PublicOnly><ForgotPasswordPage /></PublicOnly>} />
 
         {/* App Routes (with Sidebar + Topbar layout) */}
         <Route element={<ProtectedLayout />}>
@@ -72,12 +89,16 @@ function App() {
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/admin/:agentKey" element={<AdminAgentPage />} />
 
+        {/* Legal */}
+        <Route path="/legal/:type" element={<LegalPage />} />
+
         {/* Fallback */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
 
       {/* Global Floating AI Chatbot - visible on all pages */}
       <AIChatbot />
+      </ErrorBoundary>
       </ToastProvider>
     </BrowserRouter>
   );
