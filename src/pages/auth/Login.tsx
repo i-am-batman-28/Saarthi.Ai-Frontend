@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, Sparkles, Brain, Code2, BarChart3, GraduationCap } from 'lucide-react';
 import { useAuthStore } from '../../stores/auth.store';
 import { LogoIcon } from '../../components/LogoIcon';
+import { acceptPendingInvite } from '../JoinCourse';
 import './Auth.css';
 
 export default function LoginPage() {
@@ -13,13 +14,17 @@ export default function LoginPage() {
     const [error, setError] = useState('');
     const { login, isLoading } = useAuthStore();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
         try {
             await login(email, password, remember);
-            navigate('/dashboard');
+            // Auto-accept a pending invite if the student came from an invite link
+            await acceptPendingInvite();
+            const next = searchParams.get('next');
+            navigate(next || '/dashboard', { replace: true });
         } catch (err: any) {
             setError(err.message || 'Login failed. Please try again.');
         }
