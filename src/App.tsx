@@ -24,6 +24,7 @@ import FlashcardsPage from './pages/Flashcards';
 import ConceptMapPage from './pages/ConceptMap';
 import ExamPrepPage from './pages/ExamPrep';
 import SocraticPage from './pages/Socratic';
+import JoinCoursePage from './pages/JoinCourse';
 import { useAuthStore } from './stores/auth.store';
 import './stores/settings.store'; // Initialize settings (theme/font) on load
 
@@ -43,6 +44,7 @@ function App() {
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<LandingPage />} />
+        <Route path="/join" element={<JoinCoursePage />} />
         <Route path="/login" element={<PublicOnly><LoginPage /></PublicOnly>} />
         <Route path="/signup" element={<PublicOnly><SignupPage /></PublicOnly>} />
 

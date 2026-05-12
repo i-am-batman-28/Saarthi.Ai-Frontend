@@ -1127,3 +1127,30 @@
     font-size: 0.875rem;
     padding: 0.25rem 0.5rem;
 }
+
+/* ── Invited confirmations list ── */
+.cd-invited-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    margin-top: 0.75rem;
+}
+
+.cd-invited-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.cd-invited-tag {
+    margin-left: auto;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #5FA89C;
+    background: rgba(95, 168, 156, 0.12);
+    padding: 0.15rem 0.5rem;
+    border-radius: var(--radius-full);
+    white-space: nowrap;
+}
