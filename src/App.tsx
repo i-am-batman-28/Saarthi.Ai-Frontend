@@ -23,6 +23,7 @@ import AdminAgentPage from './pages/AdminAgent';
 import FlashcardsPage from './pages/Flashcards';
 import ConceptMapPage from './pages/ConceptMap';
 import ExamPrepPage from './pages/ExamPrep';
+import SocraticPage from './pages/Socratic';
 import { useAuthStore } from './stores/auth.store';
 import './stores/settings.store'; // Initialize settings (theme/font) on load
 
@@ -62,6 +63,7 @@ function App() {
           <Route path="/flashcards" element={<FlashcardsPage />} />
           <Route path="/concept-map" element={<ConceptMapPage />} />
           <Route path="/exam-prep" element={<ExamPrepPage />} />
+          <Route path="/socratic" element={<SocraticPage />} />
         </Route>
 
         {/* Admin Routes (standalone, no AppShell) */}
