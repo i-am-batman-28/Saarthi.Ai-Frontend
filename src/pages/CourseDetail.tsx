@@ -404,6 +404,7 @@ export default function CourseDetailPage() {
                 message: userContent,
                 conversationHistory: docChatMessages,
                 contextMaterialTitle: viewingMaterial.title,
+                courseId: courseId ? parseInt(courseId) : undefined,
             });
             setDocChatMessages((prev: DocChatMessage[]) => [...prev, { role: 'assistant', content: data.response }]);
         } catch (e) {
