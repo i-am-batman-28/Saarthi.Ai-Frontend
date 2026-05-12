@@ -3,9 +3,11 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import AppShell from './components/layout/AppShell';
 import AIChatbot from './components/AIChatbot';
 import { ToastProvider } from './components/Toast';
+import ErrorBoundary from './components/ErrorBoundary';
 import LandingPage from './pages/Landing';
 import LoginPage from './pages/auth/Login';
 import SignupPage from './pages/auth/Signup';
+import ForgotPasswordPage from './pages/auth/ForgotPassword';
 import DashboardPage from './pages/Dashboard';
 import CoursesPage from './pages/Courses';
 import CourseDetailPage from './pages/CourseDetail';
@@ -41,12 +43,14 @@ function App() {
   return (
     <BrowserRouter>
       <ToastProvider>
+      <ErrorBoundary>
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/join" element={<JoinCoursePage />} />
         <Route path="/login" element={<PublicOnly><LoginPage /></PublicOnly>} />
         <Route path="/signup" element={<PublicOnly><SignupPage /></PublicOnly>} />
+        <Route path="/forgot-password" element={<PublicOnly><ForgotPasswordPage /></PublicOnly>} />
 
         {/* App Routes (with Sidebar + Topbar layout) */}
         <Route element={<ProtectedLayout />}>
@@ -78,6 +82,7 @@ function App() {
 
       {/* Global Floating AI Chatbot - visible on all pages */}
       <AIChatbot />
+      </ErrorBoundary>
       </ToastProvider>
     </BrowserRouter>
   );
