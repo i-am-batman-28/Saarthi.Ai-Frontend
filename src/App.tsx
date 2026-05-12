@@ -20,6 +20,9 @@ import SearchPage from './pages/Search';
 import SettingsPage from './pages/settings/Settings';
 import AdminPage from './pages/Admin';
 import AdminAgentPage from './pages/AdminAgent';
+import FlashcardsPage from './pages/Flashcards';
+import ConceptMapPage from './pages/ConceptMap';
+import ExamPrepPage from './pages/ExamPrep';
 import { useAuthStore } from './stores/auth.store';
 import './stores/settings.store'; // Initialize settings (theme/font) on load
 
@@ -56,6 +59,9 @@ function App() {
           <Route path="/notes" element={<NotesPage />} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/flashcards" element={<FlashcardsPage />} />
+          <Route path="/concept-map" element={<ConceptMapPage />} />
+          <Route path="/exam-prep" element={<ExamPrepPage />} />
         </Route>
 
         {/* Admin Routes (standalone, no AppShell) */}
