@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Play, Pause, RotateCcw, Volume2, Settings, Maximize, MessageCircle, FileText, CheckCircle2, ChevronRight, Clock, Plus } from 'lucide-react';
+import { Play, Pause, RotateCcw, Volume2, Maximize, FileText, CheckCircle2, ChevronRight, Clock, Plus } from 'lucide-react';
 import { api, type VideoResponse, type VideoNoteResponse } from '../lib/api';
 import './VideoPlayer.css';
 
@@ -40,7 +40,6 @@ export default function VideoPlayerPage() {
     const [playing, setPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [volume, setVolume] = useState(1);
-    const [activeTab, setActiveTab] = useState<'notes' | 'discussion'>('notes');
 
     const isEmbed = Boolean(video?.embedUrl);
     const chapters: Chapter[] = video ? parseChapters(video.chaptersJson) : [];
@@ -211,8 +210,7 @@ export default function VideoPlayerPage() {
                                         </span>
                                     </div>
                                     <div className="controls-right">
-                                        <button type="button" className="control-btn"><Settings size={18} /></button>
-                                        <button type="button" className="control-btn"><Maximize size={18} /></button>
+                                        <button type="button" className="control-btn" onClick={() => videoRef.current?.requestFullscreen()}><Maximize size={18} /></button>
                                     </div>
                                 </div>
                             </div>
@@ -222,15 +220,12 @@ export default function VideoPlayerPage() {
 
                 <div className="video-content-tabs">
                     <div className="tabs-header">
-                        <button type="button" className={`tab-btn ${activeTab === 'notes' ? 'active' : ''}`} onClick={() => setActiveTab('notes')}>
+                        <button type="button" className="tab-btn active">
                             <FileText size={16} /> My Notes
-                        </button>
-                        <button type="button" className={`tab-btn ${activeTab === 'discussion' ? 'active' : ''}`} onClick={() => setActiveTab('discussion')}>
-                            <MessageCircle size={16} /> Discussion
                         </button>
                     </div>
                     <div className="tab-content">
-                        {activeTab === 'notes' && (
+                        {(
                             <div className="notes-section">
                                 <div className="add-note-box">
                                     {isEmbed && (
@@ -265,11 +260,6 @@ export default function VideoPlayerPage() {
                                         </div>
                                     ))}
                                 </div>
-                            </div>
-                        )}
-                        {activeTab === 'discussion' && (
-                            <div className="discussion-placeholder">
-                                <p>Join the conversation with other students…</p>
                             </div>
                         )}
                     </div>

@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import {
-    Sparkles, Code2, Award, BookOpen, Brain, BarChart3,
-    Play, ArrowRight, Star, CheckCircle2, ChevronRight,
+    Code2, Award, BookOpen, Brain, BarChart3,
+    Play, ArrowRight, CheckCircle2, ChevronRight,
     Zap, Users, GraduationCap, Shield, Sun, Moon
 } from 'lucide-react';
 import { useSettingsStore } from '../stores/settings.store';
@@ -12,7 +12,7 @@ const features = [
     {
         icon: Brain,
         title: 'AI Tutor Chat',
-        desc: 'Ask complex doubts and get instant, accurate explanations with source citations. Better than ChatGPT for technical subjects.',
+        desc: 'Ask complex doubts and get instant, accurate explanations with source citations from your course material.',
         color: '#4F46E5',
         bg: '#EEF2FF',
     },
@@ -58,11 +58,6 @@ const subjects = [
     'Pattern Recognition', 'Signal & Systems', 'Computer Vision',
 ];
 
-const testimonials = [
-    { name: 'Priya Sharma', role: 'B.Tech CSE, IIT Delhi', text: 'Saarthi helped me score 95% in my DSP exam. The AI explanations are so much better than generic chatbots!', rating: 5 },
-    { name: 'Rahul Verma', role: 'M.Tech ECE, NIT Trichy', text: 'The coding lab is incredibly powerful. I practiced all my algorithms here and got placed at Google!', rating: 5 },
-    { name: 'Ananya Gupta', role: 'Working Professional', text: 'As a working professional, the micro-learning approach and mobile access saved me so much time.', rating: 5 },
-];
 
 export default function LandingPage() {
     const navigate = useNavigate();
@@ -87,7 +82,6 @@ export default function LandingPage() {
                     <div className="landing-nav-links">
                         <a href="#features">Features</a>
                         <a href="#subjects">Subjects</a>
-                        <a href="#testimonials">Reviews</a>
                     </div>
                     <div className="landing-nav-actions" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                         <button
@@ -123,12 +117,11 @@ export default function LandingPage() {
                         <h1 className="landing-hero-title">
                             Master Technical Subjects
                             <br />
-                            with <span className="landing-hero-gradient">Saarthi AI</span>
+                            with <span className="landing-hero-gradient">Saarthi.ai</span>
                         </h1>
                         <p className="landing-hero-desc">
-                            Your personal Agentic AI tutor for Digital Signal Processing, Machine Learning,
-                            and Algorithms. Learn 10x faster with intelligent tutoring, interactive
-                            code labs, and instant doubt solving.
+                            A purpose-built learning platform for Digital Signal Processing, Machine Learning,
+                            and Algorithms — with AI tutoring, interactive code labs, and instant doubt solving.
                         </p>
                         <div className="landing-hero-ctas">
                             <button className="btn btn-primary btn-lg" onClick={() => navigate('/signup')}>
@@ -143,15 +136,15 @@ export default function LandingPage() {
                         <div className="landing-hero-trust">
                             <div className="landing-trust-item">
                                 <CheckCircle2 size={16} />
-                                <span>10,000+ Students</span>
+                                <span>Domain-specific AI</span>
                             </div>
                             <div className="landing-trust-item">
                                 <CheckCircle2 size={16} />
-                                <span>94% Success Rate</span>
+                                <span>Structured learning paths</span>
                             </div>
                             <div className="landing-trust-item">
                                 <CheckCircle2 size={16} />
-                                <span>4.9/5 Rating</span>
+                                <span>Progress analytics</span>
                             </div>
                         </div>
                     </div>
@@ -212,8 +205,8 @@ export default function LandingPage() {
                     <div className="landing-differ-content animate-fade-in-up">
                         <div className="landing-differ-text">
                             <span className="badge badge-info">Why Saarthi?</span>
-                            <h2>Better Than Generic AI for Technical Subjects</h2>
-                            <p>Saarthi.ai is purpose-built for technical education, trained on curated academic content including lab datasets, handwritten notes, solved exercises, and 500+ video lectures.</p>
+                            <h2>Purpose-Built for Technical Education</h2>
+                            <p>Saarthi.ai is trained on curated academic content including lab datasets, handwritten notes, solved exercises, and video lectures — not generic internet data.</p>
                             <div className="landing-differ-list">
                                 <div className="landing-differ-item">
                                     <Shield size={20} style={{ color: 'var(--primary)' }} />
@@ -241,12 +234,12 @@ export default function LandingPage() {
                         <div className="landing-differ-table">
                             <table>
                                 <thead>
-                                    <tr><th>Feature</th><th>ChatGPT</th><th>Saarthi.ai</th></tr>
+                                    <tr><th>Feature</th><th>Generic AI</th><th>Saarthi.ai</th></tr>
                                 </thead>
                                 <tbody>
                                     <tr><td>Domain Knowledge</td><td>Broad, shallow</td><td className="highlight">Deep, specialized</td></tr>
                                     <tr><td>Problem Solving</td><td>Generic</td><td className="highlight">Subject-specific</td></tr>
-                                    <tr><td>Learning Path</td><td>Random</td><td className="highlight">Structured</td></tr>
+                                    <tr><td>Learning Path</td><td>Unstructured</td><td className="highlight">Structured</td></tr>
                                     <tr><td>Progress Tracking</td><td>None</td><td className="highlight">Comprehensive</td></tr>
                                     <tr><td>Content Source</td><td>Internet</td><td className="highlight">Curated academic</td></tr>
                                 </tbody>
@@ -275,35 +268,6 @@ export default function LandingPage() {
                 </div>
             </section>
 
-            {/* Testimonials */}
-            <section id="testimonials" className="landing-testimonials">
-                <div className="container">
-                    <div className="landing-section-header animate-fade-in-up">
-                        <span className="badge badge-primary">Testimonials</span>
-                        <h2>Loved by Students</h2>
-                        <p>See what our learners have to say</p>
-                    </div>
-                    <div className="landing-testimonials-grid">
-                        {testimonials.map((t, i) => (
-                            <div key={i} className="landing-testimonial-card animate-fade-in-up delay-200">
-                                <div className="landing-testimonial-stars">
-                                    {Array.from({ length: t.rating }, (_, j) => (
-                                        <Star key={j} size={16} fill="#F59E0B" color="#F59E0B" />
-                                    ))}
-                                </div>
-                                <p className="landing-testimonial-text">"{t.text}"</p>
-                                <div className="landing-testimonial-author">
-                                    <div className="avatar avatar-md">{t.name.split(' ').map(n => n[0]).join('')}</div>
-                                    <div>
-                                        <p className="landing-testimonial-name">{t.name}</p>
-                                        <p className="landing-testimonial-role">{t.role}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
 
             {/* CTA */}
             <section className="landing-cta">
@@ -328,7 +292,7 @@ export default function LandingPage() {
                             <p>Your AI-powered learning companion for technical subjects. Empowering students with personalized AI tutoring.</p>
                             <div className="landing-footer-social">
                                 <Users size={18} />
-                                <span>50,000+ students & growing</span>
+                                <span>Built for technical education</span>
                             </div>
                         </div>
                         <div>

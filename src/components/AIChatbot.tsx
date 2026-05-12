@@ -21,7 +21,7 @@ export default function AIChatbot({ position = 'bottom-right' }: AIChatbotProps)
         {
             id: '1',
             role: 'assistant',
-            content: 'Hello! I\'m Saarthi, your AI learning companion. I can help you with:\n\n• Explaining complex technical concepts\n• Solving doubts in DSP, ML, Algorithms\n• Code debugging and optimization\n• Exam preparation tips\n\nWhat would you like to learn today?',
+            content: 'Hello! I\'m your Saarthi study assistant. I can help you with:\n\n• Explaining technical concepts\n• Solving doubts in DSP, ML, Algorithms\n• Code debugging and optimization\n• Exam preparation\n\nWhat would you like to work on?',
             timestamp: new Date(),
         },]);
     const [inputValue, setInputValue] = useState('');
@@ -211,8 +211,8 @@ export default function AIChatbot({ position = 'bottom-right' }: AIChatbotProps)
                                     <LogoIcon size={24} style={{ color: 'white' }} />
                                 </div>
                                 <div>
-                                    <h3 style={{ fontWeight: 'bold', fontSize: '1.125rem', margin: 0 }}>Saarthi AI Tutor</h3>
-                                    <p style={{ fontSize: '0.75rem', color: '#DBEAFE', margin: 0 }}>Always here to help</p>
+                                    <h3 style={{ fontWeight: 'bold', fontSize: '1.125rem', margin: 0 }}>Saarthi Assistant</h3>
+                                    <p style={{ fontSize: '0.75rem', color: '#DBEAFE', margin: 0 }}>AI Study Assistant</p>
                                 </div>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
@@ -222,10 +222,9 @@ export default function AIChatbot({ position = 'bottom-right' }: AIChatbotProps)
                                         height: '0.5rem',
                                         backgroundColor: '#10B981',
                                         borderRadius: '50%',
-                                        animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
                                     }}
                                 />
-                                <span style={{ fontSize: '0.75rem', color: '#DBEAFE' }}>Online</span>
+                                <span style={{ fontSize: '0.75rem', color: '#DBEAFE' }}>Active</span>
                             </div>
                         </div>
                     </div>
