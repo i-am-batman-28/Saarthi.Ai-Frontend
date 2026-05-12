@@ -1,35 +1,38 @@
-/* Admin Agent Manage Page */
+/* Admin Agent Manage Page — uses Saarthi design system tokens */
 
 .admin-agent-page {
     min-height: 100vh;
-    background: var(--bg-primary, #0f0f0f);
-    color: var(--text-primary, #f1f1f1);
+    background: var(--background);
+    color: var(--foreground);
 }
 
 .admin-agent-header {
     display: flex;
     align-items: center;
-    gap: 16px;
-    padding: 24px 32px;
-    border-bottom: 1px solid var(--border, #2a2a2a);
-    background: var(--bg-secondary, #1a1a1a);
+    gap: 1rem;
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-1);
+    box-shadow: var(--shadow-sm);
 }
 
 .admin-back-btn {
-    padding: 6px 12px;
-    border-radius: 8px;
-    border: 1px solid var(--border, #2a2a2a);
+    padding: 0.4rem 0.875rem;
+    border-radius: var(--radius);
+    border: 1.5px solid var(--border);
     background: transparent;
-    color: var(--text-secondary, #aaa);
+    color: var(--text-muted);
     cursor: pointer;
-    font-size: 0.85rem;
-    transition: background 0.15s;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    font-family: inherit;
+    transition: all 0.15s;
     white-space: nowrap;
 }
 
 .admin-back-btn:hover {
-    background: var(--bg-hover, #2a2a2a);
-    color: var(--text-primary, #f1f1f1);
+    background: var(--gray-100);
+    color: var(--foreground);
 }
 
 .admin-agent-title-emoji {
@@ -39,60 +42,62 @@
 
 .admin-agent-header h1 {
     margin: 0;
-    font-size: 1.4rem;
+    font-size: 1.25rem;
     font-weight: 700;
+    color: var(--foreground);
 }
 
 .admin-agent-header p {
     margin: 2px 0 0;
-    font-size: 0.83rem;
-    color: var(--text-secondary, #888);
+    font-size: 0.8125rem;
+    color: var(--text-muted);
 }
 
 .admin-agent-body {
-    padding: 32px;
+    padding: 2rem;
     max-width: 860px;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
-    gap: 28px;
+    gap: 1.5rem;
 }
 
 /* Sections */
 
 .admin-section {
-    background: var(--bg-secondary, #1a1a1a);
-    border: 1px solid var(--border, #2a2a2a);
-    border-radius: 12px;
-    padding: 24px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
 }
 
 .admin-section h2 {
-    margin: 0 0 16px;
-    font-size: 1rem;
+    margin: 0 0 1rem;
+    font-size: 0.75rem;
     font-weight: 600;
-    color: var(--text-secondary, #aaa);
+    color: var(--text-muted);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.07em;
 }
 
 .admin-loading {
-    color: var(--text-secondary, #888);
-    font-size: 0.9rem;
+    color: var(--text-muted);
+    font-size: 0.875rem;
 }
 
 .admin-error {
-    background: rgba(239, 68, 68, 0.1);
-    border: 1px solid rgba(239, 68, 68, 0.3);
-    border-radius: 8px;
-    padding: 10px 14px;
-    color: #ef4444;
-    font-size: 0.9rem;
+    background: var(--error-light);
+    border: 1px solid var(--error);
+    border-radius: var(--radius);
+    padding: 0.625rem 0.875rem;
+    color: var(--error-dark);
+    font-size: 0.875rem;
 }
 
 .admin-empty {
-    color: var(--text-secondary, #888);
-    font-size: 0.9rem;
+    color: var(--text-muted);
+    font-size: 0.875rem;
     font-style: italic;
 }
 
@@ -106,17 +111,20 @@
 
 .admin-docs-table th {
     text-align: left;
-    padding: 6px 10px;
-    color: var(--text-secondary, #888);
+    padding: 0.375rem 0.625rem;
+    color: var(--text-muted);
     font-weight: 500;
-    border-bottom: 1px solid var(--border, #2a2a2a);
-    font-size: 0.8rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 .admin-docs-table td {
-    padding: 10px 10px;
-    border-bottom: 1px solid var(--border, #222);
+    padding: 0.625rem 0.625rem;
+    border-bottom: 1px solid var(--border);
     vertical-align: middle;
+    color: var(--text-secondary);
 }
 
 .admin-docs-table tr:last-child td {
@@ -124,9 +132,9 @@
 }
 
 .admin-doc-name {
-    font-family: monospace;
-    font-size: 0.82rem;
-    color: var(--text-primary, #f1f1f1);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8125rem;
+    color: var(--foreground) !important;
     word-break: break-all;
 }
 
@@ -135,39 +143,41 @@
     border: none;
     cursor: pointer;
     font-size: 1rem;
-    padding: 4px 8px;
-    border-radius: 6px;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-sm);
     transition: background 0.15s;
+    font-family: inherit;
 }
 
 .admin-delete-btn:hover:not(:disabled) {
-    background: rgba(239, 68, 68, 0.15);
+    background: var(--error-light);
 }
 
 .admin-delete-btn:disabled {
-    opacity: 0.5;
+    opacity: 0.4;
     cursor: not-allowed;
 }
 
 /* Drop Zone */
 
 .admin-dropzone {
-    border: 2px dashed var(--border, #333);
-    border-radius: 10px;
-    padding: 36px 24px;
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-lg);
+    padding: 2.5rem 1.5rem;
     text-align: center;
     cursor: pointer;
     transition: border-color 0.15s, background 0.15s;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
+    gap: 0.375rem;
+    background: var(--surface-2);
 }
 
 .admin-dropzone:hover,
 .admin-dropzone.drag-over {
-    border-color: var(--accent, #6366f1);
-    background: rgba(99, 102, 241, 0.05);
+    border-color: var(--accent);
+    background: var(--accent-50);
 }
 
 .admin-dropzone-icon {
@@ -177,52 +187,55 @@
 .admin-dropzone p {
     margin: 0;
     font-size: 0.9rem;
-    color: var(--text-primary, #ddd);
+    color: var(--text-secondary);
 }
 
 .admin-dropzone-sub {
     font-size: 0.78rem !important;
-    color: var(--text-secondary, #888) !important;
+    color: var(--text-muted) !important;
 }
 
 /* Upload Actions */
 
 .admin-upload-actions {
     display: flex;
-    gap: 12px;
-    margin-top: 16px;
+    gap: 0.75rem;
+    margin-top: 1rem;
 }
 
 .admin-upload-btn,
 .admin-reindex-btn {
     flex: 1;
-    padding: 10px 16px;
-    border-radius: 8px;
-    border: 1px solid var(--border, #2a2a2a);
+    padding: 0.625rem 1rem;
+    border-radius: var(--radius);
     cursor: pointer;
-    font-size: 0.9rem;
+    font-size: 0.875rem;
     font-weight: 500;
-    transition: background 0.15s, border-color 0.15s;
+    font-family: inherit;
+    transition: all 0.15s;
 }
 
 .admin-upload-btn {
     background: transparent;
-    color: var(--text-primary, #f1f1f1);
+    border: 1.5px solid var(--border);
+    color: var(--text-secondary);
 }
 
 .admin-upload-btn:hover:not(:disabled) {
-    background: var(--bg-hover, #2a2a2a);
+    background: var(--gray-100);
+    border-color: var(--gray-400);
+    color: var(--foreground);
 }
 
 .admin-reindex-btn {
-    background: var(--accent, #6366f1);
-    border-color: var(--accent, #6366f1);
+    background: var(--primary);
+    border: 1.5px solid var(--primary);
     color: #fff;
 }
 
 .admin-reindex-btn:hover:not(:disabled) {
-    background: #4f46e5;
-    border-color: #4f46e5;
+    background: var(--primary-dark);
+    border-color: var(--primary-dark);
 }
 
 .admin-upload-btn:disabled,
@@ -232,48 +245,98 @@
 }
 
 .admin-upload-msg {
-    margin-top: 10px;
+    margin-top: 0.625rem;
     font-size: 0.875rem;
-    padding: 8px 12px;
-    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--radius);
 }
 
 .admin-upload-msg.success {
-    background: rgba(34, 197, 94, 0.1);
-    color: #22c55e;
+    background: var(--success-50);
+    color: var(--success-dark);
+    border: 1px solid var(--success);
 }
 
 .admin-upload-msg.error {
-    background: rgba(239, 68, 68, 0.1);
-    color: #ef4444;
+    background: var(--error-light);
+    color: var(--error-dark);
+    border: 1px solid var(--error);
 }
 
 /* Indexing Log */
 
 .admin-index-log {
-    background: #111;
-    border-radius: 8px;
-    padding: 16px;
-    font-family: 'Courier New', monospace;
-    font-size: 0.82rem;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8125rem;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 0.375rem;
     max-height: 280px;
     overflow-y: auto;
 }
 
 .admin-log-line {
-    color: var(--text-secondary, #aaa);
-    line-height: 1.4;
+    color: var(--text-secondary);
+    line-height: 1.5;
 }
 
 .admin-log-line.success {
-    color: #22c55e;
+    color: var(--success-dark);
     font-weight: 600;
 }
 
 .admin-log-line.error {
-    color: #ef4444;
+    color: var(--error-dark);
     font-weight: 600;
+}
+
+/* Dark mode overrides */
+[data-theme='dark'] .admin-page,
+[data-theme='dark'] .admin-agent-page {
+    background: var(--background);
+}
+
+[data-theme='dark'] .admin-header,
+[data-theme='dark'] .admin-agent-header {
+    background: var(--surface-1);
+    border-color: var(--border);
+}
+
+[data-theme='dark'] .admin-header h1,
+[data-theme='dark'] .admin-agent-header h1 {
+    color: var(--foreground);
+}
+
+[data-theme='dark'] .admin-agent-card,
+[data-theme='dark'] .admin-section {
+    background: var(--card-bg);
+    border-color: var(--border);
+}
+
+[data-theme='dark'] .admin-agent-info h3,
+[data-theme='dark'] .admin-doc-name {
+    color: var(--foreground) !important;
+}
+
+[data-theme='dark'] .admin-docs-table td {
+    color: var(--text-secondary);
+    border-color: var(--border);
+}
+
+[data-theme='dark'] .admin-docs-table th {
+    border-color: var(--border);
+}
+
+[data-theme='dark'] .admin-dropzone {
+    background: var(--surface-2);
+    border-color: var(--border);
+}
+
+[data-theme='dark'] .admin-index-log {
+    background: var(--surface-2);
+    border-color: var(--border);
 }
