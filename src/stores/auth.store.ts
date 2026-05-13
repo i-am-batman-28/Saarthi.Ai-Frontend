@@ -14,6 +14,7 @@ interface User {
 interface AuthState {
     user: User | null;
     token: string | null;
+    refreshToken: string | null;
     isAuthenticated: boolean;
     isLoading: boolean;
     isRestoring: boolean;
@@ -27,7 +28,6 @@ interface AuthState {
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
-/** Backend returns { success, error: { code, message, details } }. Extract message string. */
 function getErrorMessage(data: any, fallback: string): string {
     if (data?.error && typeof data.error === 'object' && typeof data.error.message === 'string') {
         return data.error.message;
@@ -39,11 +39,15 @@ function getErrorMessage(data: any, fallback: string): string {
     return fallback;
 }
 
+const authHeader = (t: string | null): Record<string, string> => t ? { 'Authorization': `Bearer ${t}` } : {};
+const ngrokHeader = (): Record<string, string> => API_URL.includes('ngrok') ? { 'ngrok-skip-browser-warning': '1' } : {};
+
 export const useAuthStore = create<AuthState>()(
     persist(
         (set) => ({
             user: null,
             token: null,
+            refreshToken: null,
             isAuthenticated: false,
             isLoading: false,
             isRestoring: true,
@@ -54,7 +58,7 @@ export const useAuthStore = create<AuthState>()(
                     const res = await fetch(`${API_URL}/auth/signin`, {
                         method: 'POST',
                         credentials: 'include',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 'Content-Type': 'application/json', ...ngrokHeader() },
                         body: JSON.stringify({ email, password, remember_me: rememberMe }),
                     });
                     const contentType = res.headers.get('content-type');
@@ -66,7 +70,7 @@ export const useAuthStore = create<AuthState>()(
                     const userData = data.data || data;
                     const user = userData.user;
                     if (user && !user.name) user.name = user.fullName || user.full_name || 'User';
-                    set({ user, token: userData.token, isAuthenticated: true, isLoading: false });
+                    set({ user, token: userData.access_token ?? userData.token, refreshToken: userData.refresh_token ?? null, isAuthenticated: true, isLoading: false });
                 } catch (error) {
                     set({ isLoading: false });
                     throw error;
@@ -79,7 +83,7 @@ export const useAuthStore = create<AuthState>()(
                     const res = await fetch(`${API_URL}/auth/signup`, {
                         method: 'POST',
                         credentials: 'include',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 'Content-Type': 'application/json', ...ngrokHeader() },
                         body: JSON.stringify({
                             fullName: formData.name,
                             email: formData.email,
@@ -108,7 +112,7 @@ export const useAuthStore = create<AuthState>()(
                         const requestedRole = formData.role === 'teacher' ? 'teacher' : 'student';
                         user.role = (user.role === 'teacher' || user.role === 'admin') ? user.role : requestedRole;
                     }
-                    set({ user, token: userData.token, isAuthenticated: true, isLoading: false });
+                    set({ user, token: userData.access_token ?? userData.token, refreshToken: userData.refresh_token ?? null, isAuthenticated: true, isLoading: false });
                 } catch (error) {
                     set({ isLoading: false });
                     throw error;
@@ -119,37 +123,40 @@ export const useAuthStore = create<AuthState>()(
                 try {
                     await fetch(`${API_URL}/auth/logout`, { method: 'POST', credentials: 'include' });
                 } finally {
-                    set({ user: null, token: null, isAuthenticated: false });
+                    set({ user: null, token: null, refreshToken: null, isAuthenticated: false });
                 }
             },
 
             restoreSession: async () => {
                 set({ isRestoring: true });
                 try {
-                    const stored = (() => { try { return JSON.parse(localStorage.getItem('saarthi-auth') || '{}')?.state?.token ?? null; } catch { return null; } })();
-                    const authHeader = (t: string | null): Record<string, string> => t ? { 'Authorization': `Bearer ${t}` } : {};
-                    let res = await fetch(`${API_URL}/auth/me`, { credentials: 'include', headers: authHeader(stored) });
-                    if (res.status === 401) {
+                    const stored = (() => { try { const s = JSON.parse(localStorage.getItem('saarthi-auth') || '{}')?.state; return { token: s?.token ?? null, refreshToken: s?.refreshToken ?? null }; } catch { return { token: null, refreshToken: null }; } })();
+                    let res = await fetch(`${API_URL}/auth/me`, { credentials: 'include', headers: { ...authHeader(stored.token), ...ngrokHeader() } });
+                    if (res.status === 401 && stored.refreshToken) {
                         const refreshRes = await fetch(`${API_URL}/auth/refresh`, {
                             method: 'POST',
                             credentials: 'include',
-                            headers: { 'Content-Type': 'application/json', ...authHeader(stored) },
+                            headers: { 'Content-Type': 'application/json', ...ngrokHeader() },
+                            body: JSON.stringify({ refresh_token: stored.refreshToken }),
                         });
                         if (refreshRes.ok) {
                             const refreshData = await refreshRes.json();
-                            const newToken = refreshData?.data?.access_token ?? refreshData?.access_token ?? stored;
-                            res = await fetch(`${API_URL}/auth/me`, { credentials: 'include', headers: authHeader(newToken) });
+                            const rd = refreshData?.data || refreshData;
+                            const newToken = rd?.access_token ?? rd?.token ?? stored.token;
+                            const newRefresh = rd?.refresh_token ?? stored.refreshToken;
+                            set({ token: newToken, refreshToken: newRefresh });
+                            res = await fetch(`${API_URL}/auth/me`, { credentials: 'include', headers: { ...authHeader(newToken), ...ngrokHeader() } });
                         }
                     }
                     if (!res.ok) {
-                        set({ user: null, token: null, isAuthenticated: false, isRestoring: false });
+                        set({ user: null, token: null, refreshToken: null, isAuthenticated: false, isRestoring: false });
                         return;
                     }
                     const user = await res.json();
                     if (user && !user.name) user.name = user.fullName || user.full_name || 'User';
-                    set({ user, token: null, isAuthenticated: true, isRestoring: false });
+                    set({ user, isAuthenticated: true, isRestoring: false });
                 } catch {
-                    set({ user: null, token: null, isAuthenticated: false, isRestoring: false });
+                    set({ user: null, token: null, refreshToken: null, isAuthenticated: false, isRestoring: false });
                 }
             },
 
@@ -157,12 +164,12 @@ export const useAuthStore = create<AuthState>()(
                 set({ user });
             },
             clearSession: () => {
-                set({ user: null, token: null, isAuthenticated: false, isRestoring: false, isLoading: false });
+                set({ user: null, token: null, refreshToken: null, isAuthenticated: false, isRestoring: false, isLoading: false });
             },
         }),
         {
             name: 'saarthi-auth',
-            partialize: (state) => ({ user: state.user, token: state.token, isAuthenticated: state.isAuthenticated }),
+            partialize: (state) => ({ user: state.user, token: state.token, refreshToken: state.refreshToken, isAuthenticated: state.isAuthenticated }),
         }
     )
 );

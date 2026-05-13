@@ -31,11 +31,25 @@ async function attemptRefresh(): Promise<boolean> {
   refreshInFlight = (async () => {
     const base = getBaseUrl();
     const refreshUrl = `${base}/auth/refresh`;
+    const storedRefresh = (() => { try { return JSON.parse(localStorage.getItem('saarthi-auth') || '{}')?.state?.refreshToken ?? null; } catch { return null; } })();
     const res = await fetch(refreshUrl, {
       method: 'POST',
       credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...(base.includes('ngrok') ? { 'ngrok-skip-browser-warning': '1' } : {}) },
+      body: storedRefresh ? JSON.stringify({ refresh_token: storedRefresh }) : undefined,
     });
+    if (res.ok) {
+      const data = await res.json();
+      const rd = data?.data || data;
+      const newToken = rd?.access_token ?? rd?.token ?? null;
+      const newRefresh = rd?.refresh_token ?? storedRefresh;
+      if (newToken) {
+        try {
+          const raw = JSON.parse(localStorage.getItem('saarthi-auth') || '{}');
+          if (raw?.state) { raw.state.token = newToken; raw.state.refreshToken = newRefresh; localStorage.setItem('saarthi-auth', JSON.stringify(raw)); }
+        } catch { /* ignore */ }
+      }
+    }
     return res.ok;
   })();
   try {
