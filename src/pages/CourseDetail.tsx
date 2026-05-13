@@ -256,6 +256,7 @@ export default function CourseDetailPage() {
     const [docChatInput, setDocChatInput] = useState('');
     const [docChatSending, setDocChatSending] = useState(false);
     const docChatBottomRef = useRef<HTMLDivElement>(null);
+    const docChatScrollRef = useRef<HTMLDivElement>(null);
     const [docPdfObjectUrl, setDocPdfObjectUrl] = useState<string | null>(null);
     const [docPdfError, setDocPdfError] = useState<string | null>(null);
     const [docPdfLoading, setDocPdfLoading] = useState(false);
@@ -433,7 +434,7 @@ export default function CourseDetailPage() {
         );
         setDocChatMessages(prev => [...prev, { role: 'user', content: userContent }]);
         setDocChatSending(true);
-        setTimeout(() => docChatBottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+        requestAnimationFrame(() => { if (docChatScrollRef.current) docChatScrollRef.current.scrollTop = docChatScrollRef.current.scrollHeight; });
         try {
             const data = await api.post<{ response: string }>('/chat/message', {
                 message: userContent,
@@ -453,7 +454,7 @@ export default function CourseDetailPage() {
             }]);
         } finally {
             setDocChatSending(false);
-            setTimeout(() => docChatBottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+            requestAnimationFrame(() => { if (docChatScrollRef.current) docChatScrollRef.current.scrollTop = docChatScrollRef.current.scrollHeight; });
         }
     };
 
@@ -990,7 +991,7 @@ export default function CourseDetailPage() {
                                     Ask questions below to get explanations, summaries, or key points about this document. Our AI will answer in the context of &quot;{viewingMaterial.title}&quot;.
                                 </p>
                                 <div className="cd-doc-view-sidebar-chat">
-                                    <div className="cd-doc-view-messages">
+                                    <div className="cd-doc-view-messages" ref={docChatScrollRef}>
                                         {docChatMessages.length === 0 && (
                                             <div className="cd-doc-view-messages-empty">
                                                 <Sparkles size={22} className="cd-doc-view-empty-icon" />

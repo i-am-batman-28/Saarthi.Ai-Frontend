@@ -83,6 +83,7 @@ export default function ChatPage() {
     const [editTitle, setEditTitle] = useState('');
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
     const endRef = useRef<HTMLDivElement>(null);
+    const messagesRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const renameInputRef = useRef<HTMLInputElement>(null);
     const abortRef = useRef<AbortController | null>(null);
@@ -279,7 +280,14 @@ export default function ChatPage() {
         }
     };
 
-    useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+    useEffect(() => {
+        const el = messagesRef.current;
+        if (!el) return;
+        // Use rAF so the DOM has fully painted the new MathContent HTML before we scroll
+        requestAnimationFrame(() => {
+            el.scrollTop = el.scrollHeight;
+        });
+    }, [messages]);
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
@@ -356,7 +364,7 @@ export default function ChatPage() {
                     <div className="chat-loading-state"><Loader2 size={24} className="animate-spin" /> Loading conversation...</div>
                 ) : (
                     <>
-                        <div className="chat-messages">
+                        <div className="chat-messages" ref={messagesRef}>
                             {displayMessages.map((msg) => (
                                 <div key={msg.id} className={`chat-msg ${msg.role}`}>
                                     <div className={`chat-msg-avatar ${msg.role}`}>
