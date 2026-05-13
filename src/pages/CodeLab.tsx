@@ -335,10 +335,15 @@ export default function CodeLabPage() {
 
         try {
             const base = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+            const storedToken = (() => { try { return JSON.parse(localStorage.getItem('saarthi-auth') || '{}')?.state?.token ?? null; } catch { return null; } })();
             const resp = await fetch(`${base}/code/explain/stream`, {
                 method: 'POST',
                 credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(storedToken ? { 'Authorization': `Bearer ${storedToken}` } : {}),
+                    ...(base.includes('ngrok') ? { 'ngrok-skip-browser-warning': '1' } : {}),
+                },
                 body: JSON.stringify({ code, language: lang, stderr, exitCode, stdout, courseContext: problem?.topics ?? 'Engineering' }),
             });
 
