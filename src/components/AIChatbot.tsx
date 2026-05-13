@@ -79,8 +79,8 @@ function CoursePreviewCard({ preview, onConfirm, onCancel, loading }: {
     onCancel: () => void;
     loading: boolean;
 }) {
-    const [title, setTitle] = useState(preview.title);
-    const [code, setCode] = useState(preview.code);
+    const [title, setTitle] = useState(preview.title || 'New Course');
+    const [code, setCode] = useState(preview.code || 'COURSE101');
 
     return (
         <div className="acb-preview-card">
@@ -355,8 +355,8 @@ export default function AIChatbot({ position = 'bottom-right' }: AIChatbotProps)
                     ? { ...m, content: `✓ Course **"${result.title}"** created — ${result.topicsCreated} topics, ${result.assignmentsCreated} assignments, and ${result.materialsCreated} material${result.materialsCreated !== 1 ? 's' : ''} added.\n\n→ Go to **Courses** to see it. [Open Courses](/courses)`, preview: undefined }
                     : m
             ));
-        } catch {
-            addMessage({ role: 'assistant', content: 'Failed to create course. Please try again.' });
+        } catch (e: any) {
+            addMessage({ role: 'assistant', content: `Failed to create course: ${e?.message || 'Unknown error'}. Please try again.` });
         } finally {
             setIsExecuting(false);
         }
@@ -374,8 +374,8 @@ export default function AIChatbot({ position = 'bottom-right' }: AIChatbotProps)
                     ? { ...m, content: `✓ Added ${result.videosAdded} videos to the course. Transcripts are being indexed in the background — students can ask AI questions about them shortly.`, preview: undefined }
                     : m
             ));
-        } catch {
-            addMessage({ role: 'assistant', content: 'Failed to import playlist. Please try again.' });
+        } catch (e: any) {
+            addMessage({ role: 'assistant', content: `Failed to import playlist: ${e?.message || 'Unknown error'}.` });
         } finally {
             setIsExecuting(false);
         }
@@ -393,8 +393,8 @@ export default function AIChatbot({ position = 'bottom-right' }: AIChatbotProps)
                     ? { ...m, content: `✓ **"${preview.title}"** added to the course and queued for AI indexing.`, preview: undefined }
                     : m
             ));
-        } catch {
-            addMessage({ role: 'assistant', content: 'Failed to add material. Please try again.' });
+        } catch (e: any) {
+            addMessage({ role: 'assistant', content: `Failed to add material: ${e?.message || 'Unknown error'}.` });
         } finally {
             setIsExecuting(false);
         }
