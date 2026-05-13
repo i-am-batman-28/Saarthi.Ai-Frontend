@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Play, Pause, RotateCcw, Volume2, Maximize, FileText, CheckCircle2, ChevronRight, Clock, Plus, MessageCircle, Send } from 'lucide-react';
+import { Play, Pause, RotateCcw, Volume2, Maximize, FileText, CheckCircle2, ChevronRight, Clock, Plus, Sparkles, Send } from 'lucide-react';
 import { api, type VideoResponse, type VideoNoteResponse } from '../lib/api';
 import { usePageTitle } from '../lib/usePageTitle';
 import MathContent from '../components/MathContent';
@@ -45,7 +45,6 @@ export default function VideoPlayerPage() {
     const [volume, setVolume] = useState(1);
     const [playbackRate, setPlaybackRate] = useState(1);
 
-    const [activeTab, setActiveTab] = useState<'notes' | 'chat'>('notes');
     const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
     const [chatInput, setChatInput] = useState('');
     const [chatLoading, setChatLoading] = useState(false);
@@ -56,24 +55,14 @@ export default function VideoPlayerPage() {
     const duration = video?.durationSeconds ?? 0;
 
     useEffect(() => {
-        if (!id) {
-            setError('Invalid video');
-            setLoading(false);
-            return;
-        }
+        if (!id) { setError('Invalid video'); setLoading(false); return; }
         let cancelled = false;
         setLoading(true);
         setError(null);
         api.get<VideoResponse>(`/videos/${id}`)
-            .then((v) => {
-                if (!cancelled) setVideo(v);
-            })
-            .catch((e) => {
-                if (!cancelled) setError(e instanceof Error ? e.message : 'Video not found');
-            })
-            .finally(() => {
-                if (!cancelled) setLoading(false);
-            });
+            .then((v) => { if (!cancelled) setVideo(v); })
+            .catch((e) => { if (!cancelled) setError(e instanceof Error ? e.message : 'Video not found'); })
+            .finally(() => { if (!cancelled) setLoading(false); });
         return () => { cancelled = true; };
     }, [id]);
 
@@ -85,6 +74,10 @@ export default function VideoPlayerPage() {
             .catch(() => { if (!cancelled) setNotes([]); });
         return () => { cancelled = true; };
     }, [id, video]);
+
+    useEffect(() => {
+        chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [chatMessages]);
 
     const togglePlay = () => {
         if (videoRef.current) {
@@ -98,9 +91,7 @@ export default function VideoPlayerPage() {
         const saved = localStorage.getItem(`saarthi_vpos_${id}`);
         if (saved && videoRef.current) {
             const t = parseFloat(saved);
-            if (t > 5 && t < (videoRef.current.duration - 10)) {
-                videoRef.current.currentTime = t;
-            }
+            if (t > 5 && t < (videoRef.current.duration - 10)) videoRef.current.currentTime = t;
         }
     };
 
@@ -109,44 +100,28 @@ export default function VideoPlayerPage() {
             const t = videoRef.current.currentTime;
             setCurrentTime(t);
             setNoteTimeSeconds(Math.floor(t));
-            if (id && Math.floor(t) % 5 === 0) {
-                localStorage.setItem(`saarthi_vpos_${id}`, String(t));
-            }
+            if (id && Math.floor(t) % 5 === 0) localStorage.setItem(`saarthi_vpos_${id}`, String(t));
         }
     };
 
     const formatTime = (seconds: number) => {
-        const mins = Math.floor(seconds / 60);
-        const secs = Math.floor(seconds % 60);
-        return `${mins}:${secs.toString().padStart(2, '0')}`;
+        const m = Math.floor(seconds / 60);
+        return `${m}:${Math.floor(seconds % 60).toString().padStart(2, '0')}`;
     };
 
     const seekTo = (time: number) => {
-        if (videoRef.current) {
-            videoRef.current.currentTime = time;
-            setCurrentTime(time);
-            setNoteTimeSeconds(Math.floor(time));
-        }
+        if (videoRef.current) { videoRef.current.currentTime = time; setCurrentTime(time); setNoteTimeSeconds(Math.floor(time)); }
     };
 
     const addNote = async () => {
         if (!newNote.trim() || !id) return;
         const timeSeconds = isEmbed ? noteTimeSeconds : Math.floor(currentTime);
         try {
-            const created = await api.post<VideoNoteResponse>(`/videos/${id}/notes`, {
-                timeSeconds,
-                text: newNote.trim(),
-            });
+            const created = await api.post<VideoNoteResponse>(`/videos/${id}/notes`, { timeSeconds, text: newNote.trim() });
             setNotes((prev) => [...prev, created].sort((a, b) => a.timeSeconds - b.timeSeconds));
             setNewNote('');
-        } catch {
-            // ignore
-        }
+        } catch { /* ignore */ }
     };
-
-    useEffect(() => {
-        chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [chatMessages]);
 
     const sendChatMessage = async () => {
         if (!chatInput.trim() || chatLoading || !video) return;
@@ -155,10 +130,9 @@ export default function VideoPlayerPage() {
         setChatMessages(prev => [...prev, { role: 'user', content: userMsg }]);
         setChatLoading(true);
         try {
-            const history = chatMessages.map(m => ({ role: m.role, content: m.content }));
             const res = await api.post<{ response: string }>('/chat/message', {
                 message: userMsg,
-                conversationHistory: history,
+                conversationHistory: chatMessages.map(m => ({ role: m.role, content: m.content })),
                 contextVideoId: parseInt(video.id),
                 contextVideoTitle: video.title,
             });
@@ -172,45 +146,46 @@ export default function VideoPlayerPage() {
 
     if (loading) {
         return (
-            <div className="video-player-page" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div className="skeleton" style={{ height: '2rem', width: '200px', borderRadius: '0.5rem' }} />
-                <div className="skeleton" style={{ height: 'clamp(280px, 50vh, 480px)', borderRadius: '0.75rem' }} />
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <div className="skeleton" style={{ height: '1.25rem', width: '60%', borderRadius: '0.375rem' }} />
-                    <div className="skeleton" style={{ height: '0.875rem', width: '40%', borderRadius: '0.375rem' }} />
+            <div className="vp-page">
+                <div className="vp-left">
+                    <div className="skeleton" style={{ height: '3rem', borderRadius: '0.5rem', marginBottom: '1rem' }} />
+                    <div className="skeleton" style={{ flex: 1, borderRadius: '0.75rem' }} />
                 </div>
+                <aside className="vp-ai-sidebar">
+                    <div className="skeleton" style={{ height: '3.5rem', borderRadius: 0 }} />
+                    <div style={{ flex: 1, padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        <div className="skeleton" style={{ height: '4rem', borderRadius: '0.5rem' }} />
+                        <div className="skeleton" style={{ height: '4rem', borderRadius: '0.5rem' }} />
+                    </div>
+                </aside>
             </div>
         );
     }
+
     if (error || !video) {
         return (
-            <div className="video-player-page">
-                <div className="video-error-state">
-                    <p>{error || 'Video not found'}</p>
-                    <button type="button" className="btn btn-primary" onClick={() => navigate('/videos')}>
-                        ← Back to Library
-                    </button>
-                </div>
+            <div className="vp-page" style={{ alignItems: 'center', justifyContent: 'center' }}>
+                <p style={{ color: 'var(--gray-500)', marginBottom: '1rem' }}>{error || 'Video not found'}</p>
+                <button type="button" className="btn btn-primary" onClick={() => navigate('/videos')}>← Back to Library</button>
             </div>
         );
     }
 
     return (
-        <div className="video-player-page">
-            <div className="video-main-area">
-                <div className="video-header">
-                    <button type="button" className="btn btn-ghost btn-sm" onClick={() => navigate('/videos')}>
-                        ← Back to Library
-                    </button>
-                    <h1>{video.title}</h1>
+        <div className="vp-page">
+            {/* ── Left: video + notes + chapters ── */}
+            <div className="vp-left">
+                <div className="vp-header">
+                    <button type="button" className="btn btn-ghost btn-sm" onClick={() => navigate('/videos')}>← Back</button>
+                    <h1 className="vp-title">{video.title}</h1>
                 </div>
 
-                <div className="video-container">
+                <div className="vp-video-wrap">
                     {isEmbed ? (
                         <iframe
                             src={video.embedUrl!}
                             title={video.title}
-                            className="video-element video-iframe"
+                            className="vp-video vp-iframe"
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                             allowFullScreen
                         />
@@ -219,67 +194,50 @@ export default function VideoPlayerPage() {
                             <video
                                 ref={videoRef}
                                 src={video.url}
-                                className="video-element"
+                                className="vp-video"
                                 onTimeUpdate={handleTimeUpdate}
                                 onLoadedMetadata={handleLoadedMetadata}
                                 onClick={togglePlay}
                             />
-                            <div className="video-controls-overlay">
-                                <div className="video-progress-container" onClick={(e) => {
+                            <div className="vp-controls-overlay">
+                                <div className="vp-progress" onClick={(e) => {
                                     const rect = e.currentTarget.getBoundingClientRect();
-                                    const pos = (e.clientX - rect.left) / rect.width;
-                                    seekTo(pos * duration);
+                                    seekTo((e.clientX - rect.left) / rect.width * duration);
                                 }}>
-                                    <div className="video-progress-bg">
-                                        <div className="video-progress-fill" style={{ width: `${duration ? (currentTime / duration) * 100 : 0}%` }} />
+                                    <div className="vp-progress-bg">
+                                        <div className="vp-progress-fill" style={{ width: `${duration ? (currentTime / duration) * 100 : 0}%` }} />
                                     </div>
                                     {chapters.map((chap, i) => (
-                                        <div key={i} className="chapter-marker" style={{ left: `${duration ? (chap.time / duration) * 100 : 0}%` }} title={chap.title} />
+                                        <div key={i} className="vp-chapter-marker" style={{ left: `${duration ? (chap.time / duration) * 100 : 0}%` }} title={chap.title} />
                                     ))}
                                 </div>
-                                <div className="video-controls-row">
-                                    <div className="controls-left">
-                                        <button type="button" onClick={togglePlay} className="control-btn">
+                                <div className="vp-controls-row">
+                                    <div className="vp-controls-left">
+                                        <button type="button" onClick={togglePlay} className="vp-ctrl-btn">
                                             {playing ? <Pause size={20} /> : <Play size={20} />}
                                         </button>
-                                        <button type="button" className="control-btn" onClick={() => seekTo(currentTime - 10)}>
+                                        <button type="button" className="vp-ctrl-btn" onClick={() => seekTo(currentTime - 10)}>
                                             <RotateCcw size={18} />
                                         </button>
-                                        <div className="volume-control">
-                                            <Volume2 size={18} />
-                                            <input
-                                                type="range"
-                                                min={0}
-                                                max={1}
-                                                step={0.1}
-                                                value={volume}
-                                                onChange={(e) => {
-                                                    const v = parseFloat(e.target.value);
-                                                    setVolume(v);
-                                                    if (videoRef.current) videoRef.current.volume = v;
-                                                }}
-                                                className="volume-slider"
+                                        <div className="vp-volume">
+                                            <Volume2 size={16} />
+                                            <input type="range" min={0} max={1} step={0.1} value={volume}
+                                                onChange={(e) => { const v = parseFloat(e.target.value); setVolume(v); if (videoRef.current) videoRef.current.volume = v; }}
+                                                className="vp-volume-slider"
                                             />
                                         </div>
-                                        <span className="time-display">
-                                            {formatTime(currentTime)} / {formatTime(duration)}
-                                        </span>
+                                        <span className="vp-time">{formatTime(currentTime)} / {formatTime(duration)}</span>
                                     </div>
-                                    <div className="controls-right">
-                                        <select
-                                            className="speed-select"
-                                            value={playbackRate}
-                                            onChange={(e) => {
-                                                const r = parseFloat(e.target.value);
-                                                setPlaybackRate(r);
-                                                if (videoRef.current) videoRef.current.playbackRate = r;
-                                            }}
-                                        >
-                                            {[0.5, 0.75, 1, 1.25, 1.5, 2].map(r => (
-                                                <option key={r} value={r}>{r}x</option>
-                                            ))}
+                                    <div className="vp-controls-right">
+                                        <select className="vp-speed" value={playbackRate} onChange={(e) => {
+                                            const r = parseFloat(e.target.value); setPlaybackRate(r);
+                                            if (videoRef.current) videoRef.current.playbackRate = r;
+                                        }}>
+                                            {[0.5, 0.75, 1, 1.25, 1.5, 2].map(r => <option key={r} value={r}>{r}x</option>)}
                                         </select>
-                                        <button type="button" className="control-btn" onClick={() => videoRef.current?.requestFullscreen()}><Maximize size={18} /></button>
+                                        <button type="button" className="vp-ctrl-btn" onClick={() => videoRef.current?.requestFullscreen()}>
+                                            <Maximize size={18} />
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -287,138 +245,112 @@ export default function VideoPlayerPage() {
                     )}
                 </div>
 
-                <div className="video-content-tabs">
-                    <div className="tabs-header">
-                        <button
-                            type="button"
-                            className={`tab-btn ${activeTab === 'notes' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('notes')}
-                        >
-                            <FileText size={16} /> My Notes
-                        </button>
-                        <button
-                            type="button"
-                            className={`tab-btn ${activeTab === 'chat' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('chat')}
-                        >
-                            <MessageCircle size={16} /> Ask AI
-                        </button>
-                    </div>
-                    <div className="tab-content">
-                        {activeTab === 'notes' && (
-                            <div className="notes-section">
-                                <div className="add-note-box">
-                                    {isEmbed && (
-                                        <input
-                                            type="number"
-                                            min={0}
-                                            value={noteTimeSeconds}
-                                            onChange={(e) => setNoteTimeSeconds(parseInt(e.target.value, 10) || 0)}
-                                            className="input input-sm"
-                                            placeholder="Time (sec)"
-                                            style={{ width: 80 }}
-                                        />
-                                    )}
-                                    <span className="timestamp-badge"><Clock size={12} /> {formatTime(isEmbed ? noteTimeSeconds : currentTime)}</span>
-                                    <input
-                                        type="text"
-                                        placeholder="Add a timestamped note..."
-                                        value={newNote}
-                                        onChange={(e) => setNewNote(e.target.value)}
-                                        onKeyDown={(e) => e.key === 'Enter' && addNote()}
-                                        className="input"
-                                    />
-                                    <button type="button" className="btn btn-primary btn-sm" onClick={addNote}>
-                                        <Plus size={14} /> Add
-                                    </button>
-                                </div>
-                                <div className="notes-list">
-                                    {notes.map((note) => (
-                                        <div key={note.id} className="note-item" onClick={() => !isEmbed && seekTo(note.timeSeconds)}>
-                                            <span className="note-time">{formatTime(note.timeSeconds)}</span>
-                                            <p className="note-text">{note.text}</p>
-                                        </div>
-                                    ))}
-                                </div>
+                {/* Chapters + Notes below video */}
+                <div className="vp-bottom">
+                    {chapters.length > 0 && (
+                        <div className="vp-chapters">
+                            <p className="vp-section-label">Chapters</p>
+                            <div className="vp-chapters-list">
+                                {chapters.map((chap, i) => {
+                                    const isActive = currentTime >= chap.time && (i === chapters.length - 1 || currentTime < chapters[i + 1].time);
+                                    return (
+                                        <button key={i} type="button" className={`vp-chap-item ${isActive ? 'active' : ''}`} onClick={() => seekTo(chap.time)}>
+                                            <div className="vp-chap-status">
+                                                {!isEmbed && currentTime > chap.time + 30
+                                                    ? <CheckCircle2 size={14} style={{ color: '#10B981' }} />
+                                                    : <div className="vp-chap-dot" />}
+                                            </div>
+                                            <span className="vp-chap-title">{chap.title}</span>
+                                            <span className="vp-chap-time">{formatTime(chap.time)}</span>
+                                            {isActive && <ChevronRight size={14} style={{ color: 'var(--primary)', marginLeft: 'auto' }} />}
+                                        </button>
+                                    );
+                                })}
                             </div>
-                        )}
-                        {activeTab === 'chat' && (
-                            <div className="video-chat-section">
-                                <div className="video-chat-messages">
-                                    {chatMessages.length === 0 && (
-                                        <p className="video-chat-empty">Ask anything about this video lecture.</p>
-                                    )}
-                                    {chatMessages.map((msg, i) => (
-                                        <div key={i} className={`video-chat-bubble ${msg.role}`}>
-                                            {msg.role === 'assistant'
-                                                ? <MathContent content={msg.content} streaming={false} />
-                                                : <span>{msg.content}</span>
-                                            }
-                                        </div>
-                                    ))}
-                                    {chatLoading && (
-                                        <div className="video-chat-bubble assistant">
-                                            <span className="chat-cursor" />
-                                        </div>
-                                    )}
-                                    <div ref={chatBottomRef} />
-                                </div>
-                                <div className="video-chat-input-row">
-                                    <input
-                                        type="text"
-                                        className="input"
-                                        placeholder="Ask about this video..."
-                                        value={chatInput}
-                                        onChange={(e) => setChatInput(e.target.value)}
-                                        onKeyDown={(e) => e.key === 'Enter' && sendChatMessage()}
-                                        disabled={chatLoading}
-                                    />
-                                    <button
-                                        type="button"
-                                        className="btn btn-primary btn-sm"
-                                        onClick={sendChatMessage}
-                                        disabled={chatLoading || !chatInput.trim()}
-                                    >
-                                        <Send size={14} />
-                                    </button>
-                                </div>
-                            </div>
-                        )}
+                        </div>
+                    )}
+
+                    <div className="vp-notes">
+                        <p className="vp-section-label"><FileText size={14} /> My Notes</p>
+                        <div className="vp-add-note">
+                            <span className="vp-timestamp"><Clock size={11} /> {formatTime(isEmbed ? noteTimeSeconds : currentTime)}</span>
+                            <input
+                                type="text"
+                                className="input"
+                                placeholder="Add a timestamped note..."
+                                value={newNote}
+                                onChange={(e) => setNewNote(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && addNote()}
+                            />
+                            <button type="button" className="btn btn-primary btn-sm" onClick={addNote}><Plus size={13} /></button>
+                        </div>
+                        <div className="vp-notes-list">
+                            {notes.length === 0
+                                ? <p className="vp-empty">No notes yet.</p>
+                                : notes.map((n) => (
+                                    <div key={n.id} className="vp-note-item" onClick={() => !isEmbed && seekTo(n.timeSeconds)}>
+                                        <span className="vp-note-time">{formatTime(n.timeSeconds)}</span>
+                                        <p className="vp-note-text">{n.text}</p>
+                                    </div>
+                                ))
+                            }
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div className="video-sidebar">
-                <div className="sidebar-header">
-                    <h3>Course Content</h3>
+            {/* ── Right: AI chat panel (same as PDF sidebar) ── */}
+            <aside className="vp-ai-sidebar">
+                <div className="vp-ai-header">
+                    <Sparkles size={18} className="vp-ai-icon" />
+                    <h2 className="vp-ai-title">Ask AI</h2>
                 </div>
-                <div className="chapters-list">
-                    {chapters.length > 0 ? (
-                        chapters.map((chap, i) => {
-                            const isActive = currentTime >= chap.time && (i === chapters.length - 1 || currentTime < chapters[i + 1].time);
-                            return (
-                                <button
-                                    key={i}
-                                    type="button"
-                                    className={`chapter-item ${isActive ? 'active' : ''}`}
-                                    onClick={() => seekTo(chap.time)}
-                                >
-                                    <div className="chapter-status">
-                                        {!isEmbed && currentTime > chap.time + 30 ? <CheckCircle2 size={16} className="text-success" /> : <div className="chapter-dot" />}
-                                    </div>
-                                    <div className="chapter-info">
-                                        <span className="chapter-title">{chap.title}</span>
-                                        <span className="chapter-time">{formatTime(chap.time)}</span>
-                                    </div>
-                                    {isActive && <ChevronRight size={16} className="chapter-active-icon" />}
-                                </button>
-                            );
-                        })
-                    ) : (
-                        <p className="video-sidebar-empty">No chapters. Duration: {formatTime(duration)}</p>
-                    )}
+                <p className="vp-ai-subtitle">Ask anything about this lecture. AI answers from the video content.</p>
+                <div className="vp-ai-chat">
+                    <div className="vp-ai-messages">
+                        {chatMessages.length === 0 && (
+                            <p className="vp-ai-empty">No messages yet. Ask anything about this video.</p>
+                        )}
+                        {chatMessages.map((msg, i) => (
+                            <div key={i} className={`vp-ai-msg vp-ai-msg-${msg.role}`}>
+                                <span className="vp-ai-msg-role">{msg.role === 'user' ? 'You' : 'Saarthi'}</span>
+                                <div className="vp-ai-msg-content">
+                                    {msg.role === 'assistant'
+                                        ? <MathContent content={msg.content} streaming={false} />
+                                        : msg.content
+                                    }
+                                </div>
+                            </div>
+                        ))}
+                        {chatLoading && (
+                            <div className="vp-ai-msg vp-ai-msg-assistant">
+                                <span className="vp-ai-msg-role">Saarthi</span>
+                                <div className="vp-ai-msg-content vp-ai-msg-thinking">Thinking…</div>
+                            </div>
+                        )}
+                        <div ref={chatBottomRef} />
+                    </div>
+                    <div className="vp-ai-input-wrap">
+                        <input
+                            type="text"
+                            className="input vp-ai-input"
+                            placeholder="Ask about this video…"
+                            value={chatInput}
+                            onChange={(e) => setChatInput(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendChatMessage()}
+                            disabled={chatLoading}
+                        />
+                        <button
+                            type="button"
+                            className="btn btn-primary vp-ai-send"
+                            onClick={sendChatMessage}
+                            disabled={!chatInput.trim() || chatLoading}
+                        >
+                            <Send size={16} />
+                        </button>
+                    </div>
                 </div>
-            </div>
+            </aside>
         </div>
     );
 }
