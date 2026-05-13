@@ -372,7 +372,15 @@ export default function CourseDetailPage() {
             if (prev) URL.revokeObjectURL(prev);
             return null;
         });
-        fetch(url, { credentials: 'include' })
+        const storedToken = (() => { try { return JSON.parse(localStorage.getItem('saarthi-auth') || '{}')?.state?.token ?? null; } catch { return null; } })();
+        const base = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+        fetch(url, {
+            credentials: 'include',
+            headers: {
+                ...(storedToken ? { 'Authorization': `Bearer ${storedToken}` } : {}),
+                ...(base.includes('ngrok') ? { 'ngrok-skip-browser-warning': '1' } : {}),
+            },
+        })
             .then((res) => {
                 if (!res.ok) throw new Error(res.status === 401 || res.status === 403 ? 'Please sign in again to view this file.' : `Could not load file (${res.status}).`);
                 return res.blob();
