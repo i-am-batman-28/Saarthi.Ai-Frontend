@@ -78,17 +78,38 @@ function CoursePreviewCard({ preview, onConfirm, onCancel, loading }: {
     onCancel: () => void;
     loading: boolean;
 }) {
+    const [title, setTitle] = useState(preview.title);
+    const [code, setCode] = useState(preview.code);
+
     return (
         <div className="acb-preview-card">
             <div className="acb-preview-header">
                 <CheckCircle2 size={15} className="acb-preview-icon" />
-                <span>Course structure extracted</span>
+                <span>Course structure extracted — review &amp; confirm</span>
             </div>
             <div className="acb-preview-body">
-                <p className="acb-preview-title">{preview.title}</p>
-                <p className="acb-preview-sub">{preview.code} · {preview.topics.length} topics</p>
+                <div className="acb-preview-field">
+                    <label className="acb-preview-label">Course name</label>
+                    <input
+                        className="acb-preview-input"
+                        value={title}
+                        onChange={e => setTitle(e.target.value)}
+                        placeholder="Course title"
+                    />
+                </div>
+                <div className="acb-preview-field">
+                    <label className="acb-preview-label">Course code</label>
+                    <input
+                        className="acb-preview-input"
+                        value={code}
+                        onChange={e => setCode(e.target.value)}
+                        placeholder="e.g. CS301"
+                        style={{ width: '120px' }}
+                    />
+                </div>
+                <p className="acb-preview-sub" style={{ marginTop: '0.5rem' }}>{preview.topics.length} topics extracted</p>
                 <div className="acb-preview-topics">
-                    {preview.topics.slice(0, 4).map((t, i) => (
+                    {preview.topics.slice(0, 5).map((t, i) => (
                         <div key={i} className="acb-preview-topic">
                             <span className="acb-preview-topic-name">{t.title}</span>
                             {t.assignments.length > 0 && (
@@ -96,13 +117,13 @@ function CoursePreviewCard({ preview, onConfirm, onCancel, loading }: {
                             )}
                         </div>
                     ))}
-                    {preview.topics.length > 4 && (
-                        <p className="acb-preview-more">+{preview.topics.length - 4} more topics</p>
+                    {preview.topics.length > 5 && (
+                        <p className="acb-preview-more">+{preview.topics.length - 5} more topics</p>
                     )}
                 </div>
             </div>
             <div className="acb-preview-actions">
-                <button className="acb-btn-confirm" onClick={() => onConfirm(preview)} disabled={loading}>
+                <button className="acb-btn-confirm" onClick={() => onConfirm({ ...preview, title, code })} disabled={loading || !title.trim()}>
                     {loading ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}
                     Create course
                 </button>
@@ -323,10 +344,9 @@ export default function AIChatbot({ position = 'bottom-right' }: AIChatbotProps)
                 coursePreview: preview,
                 instructorName: user?.fullName || user?.name || 'Instructor',
             });
-            // Replace the preview message with success
             setMessages(prev => prev.map(m =>
                 m.preview?.intent === 'create_course'
-                    ? { ...m, content: `✓ Course **"${result.title}"** created — ${result.topicsCreated} topics and ${result.assignmentsCreated} assignments scaffolded. Open it in Courses to review.`, preview: undefined }
+                    ? { ...m, content: `✓ Course **"${result.title}"** created — ${result.topicsCreated} topics and ${result.assignmentsCreated} assignments scaffolded.\n\n→ Go to **Courses** to see it. [Open Courses](/courses)`, preview: undefined }
                     : m
             ));
         } catch {
@@ -746,6 +766,8 @@ export default function AIChatbot({ position = 'bottom-right' }: AIChatbotProps)
                 .acb-preview-select-wrap { margin-top: 0.5rem; }
                 .acb-preview-label { display: block; font-size: 0.72rem; font-weight: 600; color: var(--gray-500); margin-bottom: 0.25rem; text-transform: uppercase; letter-spacing: 0.04em; }
                 .acb-preview-select { width: 100%; padding: 0.4rem 0.6rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.8rem; background: var(--card-bg); color: var(--foreground); }
+                .acb-preview-field { margin-bottom: 0.5rem; }
+                .acb-preview-input { padding: 0.4rem 0.6rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.8rem; background: var(--card-bg); color: var(--foreground); width: 100%; box-sizing: border-box; }
                 .acb-preview-actions { display: flex; gap: 0.5rem; padding: 0.625rem 0.875rem; border-top: 1px solid var(--border); background: var(--gray-50); }
                 .acb-btn-confirm { display: flex; align-items: center; gap: 0.375rem; padding: 0.4rem 0.875rem; background: #7C3AED; color: white; border: none; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
                 .acb-btn-confirm:disabled { opacity: 0.6; cursor: not-allowed; }
