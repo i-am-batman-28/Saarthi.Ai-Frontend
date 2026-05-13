@@ -126,15 +126,19 @@ export const useAuthStore = create<AuthState>()(
             restoreSession: async () => {
                 set({ isRestoring: true });
                 try {
-                    let res = await fetch(`${API_URL}/auth/me`, { credentials: 'include' });
+                    const stored = (() => { try { return JSON.parse(localStorage.getItem('saarthi-auth') || '{}')?.state?.token ?? null; } catch { return null; } })();
+                    const authHeader = (t: string | null): Record<string, string> => t ? { 'Authorization': `Bearer ${t}` } : {};
+                    let res = await fetch(`${API_URL}/auth/me`, { credentials: 'include', headers: authHeader(stored) });
                     if (res.status === 401) {
                         const refreshRes = await fetch(`${API_URL}/auth/refresh`, {
                             method: 'POST',
                             credentials: 'include',
-                            headers: { 'Content-Type': 'application/json' },
+                            headers: { 'Content-Type': 'application/json', ...authHeader(stored) },
                         });
                         if (refreshRes.ok) {
-                            res = await fetch(`${API_URL}/auth/me`, { credentials: 'include' });
+                            const refreshData = await refreshRes.json();
+                            const newToken = refreshData?.data?.access_token ?? refreshData?.access_token ?? stored;
+                            res = await fetch(`${API_URL}/auth/me`, { credentials: 'include', headers: authHeader(newToken) });
                         }
                     }
                     if (!res.ok) {
@@ -158,7 +162,7 @@ export const useAuthStore = create<AuthState>()(
         }),
         {
             name: 'saarthi-auth',
-            partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated }),
+            partialize: (state) => ({ user: state.user, token: state.token, isAuthenticated: state.isAuthenticated }),
         }
     )
 );
