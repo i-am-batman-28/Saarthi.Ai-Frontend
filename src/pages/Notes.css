@@ -229,7 +229,7 @@
     align-items: center;
     justify-content: center;
     z-index: 1000;
-    padding: 5vh 1rem;
+    padding: 2rem 1rem;
 }
 
 .notes-modal {
@@ -239,10 +239,8 @@
     box-shadow: var(--shadow-xl);
     width: 100%;
     max-width: 520px;
-    max-height: calc(100vh - 10rem);
     display: flex;
     flex-direction: column;
-    overflow: hidden;
 }
 
 .notes-modal-header {
