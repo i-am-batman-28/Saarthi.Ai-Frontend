@@ -298,9 +298,14 @@ export default function AIChatbot({ position = 'bottom-right' }: AIChatbotProps)
             if (file) formData.append('file', file);
 
             const base = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+            const storedToken = (() => { try { return JSON.parse(localStorage.getItem('saarthi-auth') || '{}')?.state?.token ?? null; } catch { return null; } })();
             const resp = await fetch(`${base}/teacher/analyse`, {
                 method: 'POST',
                 credentials: 'include',
+                headers: {
+                    ...(storedToken ? { 'Authorization': `Bearer ${storedToken}` } : {}),
+                    ...(base.includes('ngrok') ? { 'ngrok-skip-browser-warning': '1' } : {}),
+                },
                 body: formData,
             });
             if (!resp.ok) throw new Error(await resp.text());
