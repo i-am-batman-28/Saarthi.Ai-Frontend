@@ -961,6 +961,31 @@
     font-style: italic;
 }
 
+.cd-doc-followups {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    padding: 0.5rem 1rem 0.25rem;
+}
+
+.cd-doc-followup-chip {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    text-align: left;
+}
+
+.cd-doc-followup-chip:hover {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+}
+
 .cd-doc-view-input-wrap {
     display: flex;
     gap: 0.5rem;
