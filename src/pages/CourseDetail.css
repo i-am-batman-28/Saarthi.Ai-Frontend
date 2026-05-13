@@ -487,10 +487,11 @@
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(2px);
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     z-index: 1000;
-    padding: 2rem 1rem;
+    padding: 4vh 1rem 4vh;
+    overflow-y: auto;
 }
 
 .cd-modal {
@@ -501,6 +502,8 @@
     display: flex;
     flex-direction: column;
     box-shadow: var(--shadow-xl);
+    max-height: calc(100vh - 8vh);
+    overflow: hidden;
 }
 
 .cd-modal-header {
@@ -714,6 +717,10 @@
 
 [data-theme='dark'] .cd-modal {
     background: var(--card-bg);
+    max-height: calc(100vh - 8vh);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 [data-theme='dark'] .cd-modal-field label {

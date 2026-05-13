@@ -226,10 +226,11 @@
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(4px);
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     z-index: 1000;
-    padding: 2rem 1rem;
+    padding: 4vh 1rem 4vh;
+    overflow-y: auto;
 }
 
 .notes-modal {
@@ -239,8 +240,10 @@
     box-shadow: var(--shadow-xl);
     width: 100%;
     max-width: 520px;
+    max-height: calc(100vh - 8vh);
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 .notes-modal-header {
