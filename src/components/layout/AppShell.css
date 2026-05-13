@@ -3,7 +3,8 @@
    ================================================ */
 .app-shell {
     display: flex;
-    min-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
 }
 
 .app-main {
@@ -11,7 +12,8 @@
     margin-left: 240px;
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
     transition: margin-left 0.3s ease;
     background: var(--background);
 }
@@ -26,6 +28,7 @@
     padding: 1.5rem;
     overflow-y: auto;
     background: var(--background);
+    min-height: 0;
 }
 
 @media (max-width: 768px) {
