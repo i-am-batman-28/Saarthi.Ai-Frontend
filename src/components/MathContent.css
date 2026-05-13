@@ -7,12 +7,38 @@
 .math-content strong { font-weight: 700; }
 .math-content em { font-style: italic; }
 
-.math-content ul {
-    margin: 0.35rem 0 0.35rem 1.1rem;
-    padding: 0;
-    list-style: disc;
+/* Headings inside AI responses */
+.math-content .ai-h1 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--foreground);
+    margin: 0.9rem 0 0.3rem;
+    padding-bottom: 0.2rem;
+    border-bottom: 1px solid var(--border);
 }
-.math-content li { margin-bottom: 0.15rem; }
+.math-content .ai-h2 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--foreground);
+    margin: 0.8rem 0 0.2rem;
+}
+.math-content .ai-h3 {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--gray-600);
+    margin: 0.6rem 0 0.15rem;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.math-content ul,
+.math-content ol {
+    margin: 0.35rem 0 0.35rem 1.2rem;
+    padding: 0;
+}
+.math-content ul { list-style: disc; }
+.math-content ol { list-style: decimal; }
+.math-content li { margin-bottom: 0.2rem; }
 
 /* KaTeX display blocks */
 .math-content .katex-display {
