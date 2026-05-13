@@ -445,12 +445,10 @@
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(4px);
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: center;
     z-index: 1000;
-    padding: 6vh 1rem 4rem;
-    overflow-y: auto;
-    min-height: 100%;
+    padding: 5vh 1rem;
 }
 
 .course-modal {
@@ -458,6 +456,10 @@
     border-radius: var(--radius-lg);
     width: 100%;
     max-width: 600px;
+    max-height: calc(100vh - 10rem);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
     box-shadow: var(--shadow-xl);
 }
 
@@ -492,6 +494,8 @@
 
 .course-modal-body {
     padding: 1.5rem;
+    flex: 1;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
     gap: 1.25rem;
