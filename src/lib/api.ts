@@ -228,11 +228,16 @@ async function request<T>(
     const q = search.toString();
     if (q) url += (url.includes('?') ? '&' : '?') + q;
   }
+  const isNgrok = getBaseUrl().includes('ngrok');
   const doFetch = () =>
     fetch(url, {
       ...init,
       credentials: 'include',
-      headers: { 'Content-Type': 'application/json', ...init.headers },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(isNgrok ? { 'ngrok-skip-browser-warning': '1' } : {}),
+        ...init.headers,
+      },
     });
 
   let res = await doFetch();
