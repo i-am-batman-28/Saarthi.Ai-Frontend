@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     ArrowLeft, Plus, FileText, Video, BookOpen, Trash2, X, Save, Paperclip,
@@ -61,7 +61,33 @@ interface StreamItem {
     author: string;
 }
 
-type DocChatMessage = { role: 'user' | 'assistant'; content: string };
+type DocChatSection = { title: string; body: string; understood: boolean | null };
+type DocChatMessage =
+    | { role: 'user'; content: string }
+    | { role: 'assistant'; sections: DocChatSection[]; followUps: string[]; raw: string };
+
+function parseDocChatResponse(raw: string): { sections: DocChatSection[]; followUps: string[] } {
+    // Split off FOLLOWUPS line
+    const followUpsMatch = raw.match(/FOLLOWUPS:\s*(.+)$/m);
+    const followUps = followUpsMatch
+        ? followUpsMatch[1].split('|').map(q => q.trim()).filter(Boolean)
+        : [];
+    const body = raw.replace(/FOLLOWUPS:.+$/m, '').trim();
+
+    // Split on ## headings
+    const parts = body.split(/(?=^## )/m).filter(Boolean);
+    const sections: DocChatSection[] = parts.map(part => {
+        const lines = part.split('\n');
+        const titleLine = lines[0].replace(/^##\s*/, '').trim();
+        const sectionBody = lines.slice(1).join('\n').replace(/CHECKPOINT\s*/g, '').trim();
+        return { title: titleLine, body: sectionBody, understood: null };
+    });
+
+    if (sections.length === 0 && body) {
+        sections.push({ title: '', body, understood: null });
+    }
+    return { sections, followUps };
+}
 
 const tabs = [
     { id: 'stream', label: 'Stream' },
@@ -228,6 +254,7 @@ export default function CourseDetailPage() {
     const [docChatMessages, setDocChatMessages] = useState<DocChatMessage[]>([]);
     const [docChatInput, setDocChatInput] = useState('');
     const [docChatSending, setDocChatSending] = useState(false);
+    const docChatBottomRef = useRef<HTMLDivElement>(null);
     const [docPdfObjectUrl, setDocPdfObjectUrl] = useState<string | null>(null);
     const [docPdfError, setDocPdfError] = useState<string | null>(null);
     const [docPdfLoading, setDocPdfLoading] = useState(false);
@@ -393,25 +420,48 @@ export default function CourseDetailPage() {
         };
     }, [viewingMaterial?.id, courseId, viewingMaterial?.type, viewingMaterial?.url]);
 
-    const sendDocChatMessage = async () => {
-        if (!viewingMaterial || !docChatInput.trim() || docChatSending) return;
-        const userContent = docChatInput.trim();
+    const sendDocChatMessage = async (overrideMessage?: string) => {
+        if (!viewingMaterial || docChatSending) return;
+        const userContent = (overrideMessage ?? docChatInput).trim();
+        if (!userContent) return;
         setDocChatInput('');
-        setDocChatMessages((prev) => [...prev, { role: 'user', content: userContent }]);
+        const historyForApi = docChatMessages.map(m =>
+            m.role === 'user'
+                ? { role: 'user', content: m.content }
+                : { role: 'assistant', content: m.raw }
+        );
+        setDocChatMessages(prev => [...prev, { role: 'user', content: userContent }]);
         setDocChatSending(true);
+        setTimeout(() => docChatBottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
         try {
             const data = await api.post<{ response: string }>('/chat/message', {
                 message: userContent,
-                conversationHistory: docChatMessages,
+                conversationHistory: historyForApi,
                 contextMaterialTitle: viewingMaterial.title,
                 courseId: courseId ? parseInt(courseId) : undefined,
             });
-            setDocChatMessages((prev: DocChatMessage[]) => [...prev, { role: 'assistant', content: data.response }]);
+            const { sections, followUps } = parseDocChatResponse(data.response);
+            setDocChatMessages(prev => [...prev, { role: 'assistant', sections, followUps, raw: data.response }]);
         } catch (e) {
-            setDocChatMessages((prev: DocChatMessage[]) => [...prev, { role: 'assistant', content: (e instanceof Error ? e.message : 'Something went wrong. Please try again.') }]);
+            const errMsg = e instanceof Error ? e.message : 'Something went wrong. Please try again.';
+            setDocChatMessages(prev => [...prev, {
+                role: 'assistant',
+                sections: [{ title: '', body: errMsg, understood: null }],
+                followUps: [],
+                raw: errMsg,
+            }]);
         } finally {
             setDocChatSending(false);
+            setTimeout(() => docChatBottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
         }
+    };
+
+    const markSectionUnderstood = (msgIdx: number, secIdx: number, val: boolean) => {
+        setDocChatMessages(prev => prev.map((m, mi) => {
+            if (mi !== msgIdx || m.role !== 'assistant') return m;
+            const sections = m.sections.map((s, si) => si === secIdx ? { ...s, understood: val } : s);
+            return { ...m, sections };
+        }));
     };
 
     const handleDeleteMaterialClick = (material: Material) => {
@@ -941,20 +991,71 @@ export default function CourseDetailPage() {
                                 <div className="cd-doc-view-sidebar-chat">
                                     <div className="cd-doc-view-messages">
                                         {docChatMessages.length === 0 && (
-                                            <p className="cd-doc-view-messages-empty">No messages yet. Ask anything about this document.</p>
+                                            <div className="cd-doc-view-messages-empty">
+                                                <Sparkles size={22} className="cd-doc-view-empty-icon" />
+                                                <p>Ask anything about this document —<br/>I'll walk you through it step by step.</p>
+                                                <div className="cd-doc-view-starter-chips">
+                                                    {['What is this document about?', 'Explain the key concepts', 'Give me a quick summary'].map(q => (
+                                                        <button key={q} className="cd-doc-chip cd-doc-chip-starter" onClick={() => sendDocChatMessage(q)}>{q}</button>
+                                                    ))}
+                                                </div>
+                                            </div>
                                         )}
-                                        {docChatMessages.map((msg, i) => (
-                                            <div key={i} className={`cd-doc-view-msg cd-doc-view-msg-${msg.role}`}>
-                                                <span className="cd-doc-view-msg-role">{msg.role === 'user' ? 'You' : 'Saarthi'}</span>
-                                                <div className="cd-doc-view-msg-content">{msg.content}</div>
+                                        {docChatMessages.map((msg, msgIdx) => (
+                                            <div key={msgIdx} className={`cd-doc-view-msg cd-doc-view-msg-${msg.role}`}>
+                                                {msg.role === 'user' ? (
+                                                    <>
+                                                        <span className="cd-doc-view-msg-role">You</span>
+                                                        <div className="cd-doc-view-msg-content">{msg.content}</div>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <span className="cd-doc-view-msg-role">
+                                                            <Sparkles size={12} style={{ marginRight: 4, verticalAlign: 'middle' }} />
+                                                            Saarthi
+                                                        </span>
+                                                        <div className="cd-doc-sections">
+                                                            {msg.sections.map((sec, secIdx) => (
+                                                                <div key={secIdx} className="cd-doc-section">
+                                                                    {sec.title && <div className="cd-doc-section-title">{sec.title}</div>}
+                                                                    <div className="cd-doc-section-body">{sec.body}</div>
+                                                                    <div className="cd-doc-section-checkpoint">
+                                                                        {sec.understood === null ? (
+                                                                            <>
+                                                                                <span className="cd-doc-checkpoint-label">Did you get that?</span>
+                                                                                <button className="cd-doc-chip cd-doc-chip-yes" onClick={() => markSectionUnderstood(msgIdx, secIdx, true)}>Got it ✓</button>
+                                                                                <button className="cd-doc-chip cd-doc-chip-no" onClick={() => { markSectionUnderstood(msgIdx, secIdx, false); sendDocChatMessage(`Can you explain "${sec.title || 'this'}" more simply?`); }}>Explain more</button>
+                                                                            </>
+                                                                        ) : sec.understood ? (
+                                                                            <span className="cd-doc-checkpoint-done">✓ Got it</span>
+                                                                        ) : (
+                                                                            <span className="cd-doc-checkpoint-pending">Asking for more…</span>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                            {msg.followUps.length > 0 && (
+                                                                <div className="cd-doc-followups">
+                                                                    <span className="cd-doc-followups-label">Ask next:</span>
+                                                                    {msg.followUps.map(q => (
+                                                                        <button key={q} className="cd-doc-chip cd-doc-chip-followup" onClick={() => sendDocChatMessage(q)}>{q}</button>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </>
+                                                )}
                                             </div>
                                         ))}
                                         {docChatSending && (
                                             <div className="cd-doc-view-msg cd-doc-view-msg-assistant">
-                                                <span className="cd-doc-view-msg-role">Saarthi</span>
-                                                <div className="cd-doc-view-msg-content cd-doc-view-msg-loading">Thinking…</div>
+                                                <span className="cd-doc-view-msg-role"><Sparkles size={12} style={{ marginRight: 4, verticalAlign: 'middle' }} />Saarthi</span>
+                                                <div className="cd-doc-thinking">
+                                                    <span /><span /><span />
+                                                </div>
                                             </div>
                                         )}
+                                        <div ref={docChatBottomRef} />
                                     </div>
                                     <div className="cd-doc-view-input-wrap">
                                         <input
@@ -969,8 +1070,8 @@ export default function CourseDetailPage() {
                                         <button
                                             type="button"
                                             className="btn btn-primary cd-doc-view-send"
-                                            onClick={sendDocChatMessage}
-                                            disabled={!docChatInput.trim() || docChatSending}
+                                            onClick={() => sendDocChatMessage()}
+                                            disabled={(!docChatInput.trim() && !docChatSending) || docChatSending}
                                             title="Send"
                                         >
                                             <Send size={18} />
