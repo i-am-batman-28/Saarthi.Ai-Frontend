@@ -57,6 +57,30 @@
     margin: 0.15rem 0;
 }
 
+/* Tables */
+.math-content .ai-table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 0.5rem 0;
+    font-size: 0.85rem;
+}
+
+.math-content .ai-table th,
+.math-content .ai-table td {
+    border: 1px solid var(--border, #e5e7eb);
+    padding: 0.4rem 0.75rem;
+    text-align: left;
+}
+
+.math-content .ai-table th {
+    background: var(--surface-2, #f3f4f6);
+    font-weight: 600;
+}
+
+.math-content .ai-table tr:nth-child(even) td {
+    background: var(--surface-1, #fafafa);
+}
+
 /* Streaming cursor */
 .chat-cursor {
     display: inline-block;

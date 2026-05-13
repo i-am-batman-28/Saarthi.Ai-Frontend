@@ -93,20 +93,36 @@ export function renderMath(text: string): string {
     // 7. Source badges  [Source: ...]
     out = out.replace(/\[Source:\s*([^\]]+)\]/g, '<span class="ai-source-badge">📚 $1</span>');
 
-    // 8. Numbered lists  1. item
+    // 8. Markdown tables  | col | col |
+    out = out.replace(/((?:^\|.+\|\s*\n)+)/gm, (tableBlock) => {
+        const rows = tableBlock.trim().split('\n').filter(r => r.trim());
+        let html = '<table class="ai-table">';
+        let isHeader = true;
+        for (const row of rows) {
+            if (/^\|[-:| ]+\|$/.test(row.trim())) { isHeader = false; continue; }
+            const cells = row.trim().replace(/^\||\|$/g, '').split('|');
+            const tag = isHeader ? 'th' : 'td';
+            html += `<tr>${cells.map(c => `<${tag}>${c.trim()}</${tag}>`).join('')}</tr>`;
+            if (isHeader) isHeader = false;
+        }
+        html += '</table>';
+        return html;
+    });
+
+    // 9. Numbered lists  1. item
     out = out.replace(/^\d+\.\s+(.+)$/gm, '<li class="ai-ol-item">$1</li>');
     out = out.replace(/(<li class="ai-ol-item">[\s\S]*?<\/li>)+/g, m => `<ol>${m}</ol>`);
 
-    // 9. Bullet lists  - item or • item
+    // 10. Bullet lists  - item or • item
     out = out.replace(/^[\-•]\s+(.+)$/gm, '<li>$1</li>');
     out = out.replace(/(<li>[\s\S]*?<\/li>)+/g, m => `<ul>${m}</ul>`);
 
-    // 10. Line breaks (skip if inside an HTML block already)
+    // 11. Line breaks (skip if inside an HTML block already)
     out = out.replace(/\n/g, '<br/>');
 
-    // 11. Clean up extra <br/> around block elements
-    out = out.replace(/(<br\/>)+(<\/?div|<\/?ul|<\/?ol|<\/?li)/g, '$2');
-    out = out.replace(/(<\/div>|<\/ul>|<\/ol>)(<br\/>)+/g, '$1');
+    // 12. Clean up extra <br/> around block elements
+    out = out.replace(/(<br\/>)+(<\/?div|<\/?ul|<\/?ol|<\/?li|<\/?table|<\/?tr|<\/?th|<\/?td)/g, '$2');
+    out = out.replace(/(<\/div>|<\/ul>|<\/ol>|<\/table>)(<br\/>)+/g, '$1');
 
     return out;
 }

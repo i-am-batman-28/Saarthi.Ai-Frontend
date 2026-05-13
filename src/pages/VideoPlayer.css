@@ -250,8 +250,18 @@
 
 .tab-content {
     flex: 1;
-    overflow-y: auto;
+    overflow: hidden;
     padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+/* Notes tab still needs its own scroll */
+.tab-content .notes-section {
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
 }
 
 /* Notes */
