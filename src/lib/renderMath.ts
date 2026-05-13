@@ -21,17 +21,33 @@ function renderKatex(tex: string, display: boolean): string {
 }
 
 /**
- * Strip AI boilerplate artifacts that should never be shown to students.
+ * Strip ALL internal pipeline artifacts before rendering to student.
+ * This runs on every AI response — nothing internal should ever reach the UI.
  */
 function stripArtifacts(text: string): string {
     return text
-        // [Knowledge base answer] / [Knowledge Base Answer] etc.
-        .replace(/\[Knowledge\s+[Bb]ase\s+[Aa]nswer\]/g, '')
-        // References: section — everything after it until end or next ##
-        .replace(/^References:\s*\n([\s\S]*?)(?=\n##|\n---|\n*$)/gm, '')
-        // Trailing --- separators
-        .replace(/\n---\n/g, '\n')
-        .replace(/^---$/gm, '')
+        // ── Internal labels ──────────────────────────────────────────────
+        .replace(/\[Knowledge\s+[Bb]ase\s+[Aa]nswer\]/gi, '')
+        .replace(/\[Source:\s*[^\]]+\]/gi, '')
+        .replace(/\[\d+(?:,\s*\d+)*\]/g, '')   // [1], [2,3] citation markers
+
+        // ── "not found in knowledge base / context / excerpts" sentences ─
+        .replace(/While\s+the\s+specific\s+term[^.]*?(?:knowledge base|provided|context)[^.]*\./gi, '')
+        .replace(/[^\n.]*?(?:was|were|is|are)\s+not\s+(?:found|mentioned|discussed|covered|present|available)\s+in\s+(?:the\s+)?(?:provided\s+)?(?:knowledge\s+base|context|excerpts?|notes?|books?)[^.]*\./gi, '')
+        .replace(/I\s+do\s+not\s+have\s+this\s+information\s+in\s+my\s+(?:notes|knowledge\s+base|context)[^.]*\./gi, '')
+        .replace(/No\s+relevant\s+information\s+(?:was\s+)?found\s+in\s+(?:this\s+)?(?:the\s+)?knowledge\s+base[^.]*\./gi, '')
+        .replace(/(?:the|this)\s+(?:provided\s+)?(?:knowledge\s+base|context|excerpts?)\s+(?:does not|doesn't|do not|don't)\s+(?:contain|include|mention|cover)[^.]*\./gi, '')
+        .replace(/based\s+on\s+(?:the\s+)?(?:provided\s+)?(?:knowledge\s+base|context|excerpts?)[^,.]*/gi, '')
+
+        // ── Sources / References sections ─────────────────────────────────
+        .replace(/^Sources?:\s*[\s\S]*?(?=\n##|\n---|\n\n[A-Z]|$)/gmi, '')
+        .replace(/^References?:\s*[\s\S]*?(?=\n##|\n---|\n\n[A-Z]|$)/gmi, '')
+
+        // ── Horizontal rules ─────────────────────────────────────────────
+        .replace(/^---+\s*$/gm, '')
+
+        // ── Collapse extra blank lines ────────────────────────────────────
+        .replace(/\n{3,}/g, '\n\n')
         .trim();
 }
 
