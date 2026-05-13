@@ -319,6 +319,10 @@ export async function uploadFile(file: File): Promise<{ url: string }> {
   const res = await fetch(`${base}/courses/upload`, {
     method: 'POST',
     credentials: 'include',
+    headers: {
+      ...(getStoredToken() ? { 'Authorization': `Bearer ${getStoredToken()}` } : {}),
+      ...(base.includes('ngrok') ? { 'ngrok-skip-browser-warning': '1' } : {}),
+    },
     body: form,
   });
   const data = await res.json();
@@ -351,6 +355,10 @@ export async function uploadDataset(
   const res = await fetch(`${base}/data/upload`, {
     method: 'POST',
     credentials: 'include',
+    headers: {
+      ...(getStoredToken() ? { 'Authorization': `Bearer ${getStoredToken()}` } : {}),
+      ...(base.includes('ngrok') ? { 'ngrok-skip-browser-warning': '1' } : {}),
+    },
     body: form,
   });
   const data = await res.json();
