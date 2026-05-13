@@ -229,8 +229,9 @@
     align-items: flex-start;
     justify-content: center;
     z-index: 1000;
-    padding: 8vh 1rem 2rem;
+    padding: 6vh 1rem 4rem;
     overflow-y: auto;
+    min-height: 100%;
 }
 
 .notes-modal {
@@ -240,7 +241,6 @@
     box-shadow: var(--shadow-xl);
     width: 100%;
     max-width: 520px;
-    max-height: 90vh;
     display: flex;
     flex-direction: column;
     overflow: hidden;

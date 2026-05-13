@@ -448,8 +448,9 @@
     align-items: flex-start;
     justify-content: center;
     z-index: 1000;
-    padding: 8vh 1rem 2rem;
+    padding: 6vh 1rem 4rem;
     overflow-y: auto;
+    min-height: 100%;
 }
 
 .course-modal {
@@ -457,8 +458,6 @@
     border-radius: var(--radius-lg);
     width: 100%;
     max-width: 600px;
-    max-height: 90vh;
-    overflow-y: auto;
     box-shadow: var(--shadow-xl);
 }
 

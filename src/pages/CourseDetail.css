@@ -487,10 +487,12 @@
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(2px);
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     z-index: 1000;
-    padding: 5vh 1rem 2rem;
+    padding: 6vh 1rem 4rem;
+    overflow-y: auto;
+    min-height: 100%;
 }
 
 .cd-modal {
