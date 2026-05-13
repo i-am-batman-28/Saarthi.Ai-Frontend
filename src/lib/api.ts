@@ -6,6 +6,16 @@
 const getBaseUrl = () => import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 let refreshInFlight: Promise<boolean> | null = null;
 
+function getStoredToken(): string | null {
+  try {
+    const raw = localStorage.getItem('saarthi-auth');
+    if (!raw) return null;
+    return JSON.parse(raw)?.state?.token ?? null;
+  } catch {
+    return null;
+  }
+}
+
 function clearPersistedAuthState() {
   if (typeof window === 'undefined') return;
   try {
@@ -229,16 +239,19 @@ async function request<T>(
     if (q) url += (url.includes('?') ? '&' : '?') + q;
   }
   const isNgrok = getBaseUrl().includes('ngrok');
-  const doFetch = () =>
-    fetch(url, {
+  const doFetch = () => {
+    const token = getStoredToken();
+    return fetch(url, {
       ...init,
       credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         ...(isNgrok ? { 'ngrok-skip-browser-warning': '1' } : {}),
         ...init.headers,
       },
     });
+  };
 
   let res = await doFetch();
   const isRefreshPath = path.includes('/auth/refresh');
