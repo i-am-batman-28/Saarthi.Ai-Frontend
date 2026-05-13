@@ -244,10 +244,15 @@ export default function ChatPage() {
             const ctrl = new AbortController();
             abortRef.current = ctrl;
 
+            const storedToken = (() => { try { return JSON.parse(localStorage.getItem('saarthi-auth') || '{}')?.state?.token ?? null; } catch { return null; } })();
             const res = await fetch(`${BASE_URL}/chat/stream`, {
                 method: 'POST',
                 credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(storedToken ? { 'Authorization': `Bearer ${storedToken}` } : {}),
+                    ...(BASE_URL.includes('ngrok') ? { 'ngrok-skip-browser-warning': '1' } : {}),
+                },
                 body: JSON.stringify({
                     message: q,
                     conversationHistory: historyMessages,
