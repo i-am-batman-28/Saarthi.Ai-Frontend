@@ -226,6 +226,7 @@ export default function CourseDetailPage() {
     const [materialToDelete, setMaterialToDelete] = useState<Material | null>(null);
     const [materialFormError, setMaterialFormError] = useState<string | null>(null);
     const [docChatMessages, setDocChatMessages] = useState<DocChatMessage[]>([]);
+    const [docChatFollowups, setDocChatFollowups] = useState<string[]>([]);
     const [docChatInput, setDocChatInput] = useState('');
     const [docChatSending, setDocChatSending] = useState(false);
     const [docPdfObjectUrl, setDocPdfObjectUrl] = useState<string | null>(null);
@@ -405,6 +406,7 @@ export default function CourseDetailPage() {
         if (!viewingMaterial || !docChatInput.trim() || docChatSending) return;
         const userContent = docChatInput.trim();
         setDocChatInput('');
+        setDocChatFollowups([]);
         setDocChatMessages((prev) => [...prev, { role: 'user', content: userContent }]);
         setDocChatSending(true);
         try {
@@ -414,7 +416,12 @@ export default function CourseDetailPage() {
                 contextMaterialTitle: viewingMaterial.title,
                 courseId: courseId ? parseInt(courseId) : undefined,
             });
-            setDocChatMessages((prev: DocChatMessage[]) => [...prev, { role: 'assistant', content: data.response }]);
+            const raw = data.response || '';
+            const followupMatch = raw.match(/FOLLOWUPS?:\s*(.+)$/im);
+            const followups = followupMatch ? followupMatch[1].split('|').map((s: string) => s.trim()).filter(Boolean) : [];
+            const clean = raw.replace(/CHECKPOINT\s*/gi, '').replace(/FOLLOWUPS?:.*$/im, '').trim();
+            setDocChatFollowups(followups);
+            setDocChatMessages((prev: DocChatMessage[]) => [...prev, { role: 'assistant', content: clean }]);
         } catch (e) {
             setDocChatMessages((prev: DocChatMessage[]) => [...prev, { role: 'assistant', content: (e instanceof Error ? e.message : 'Something went wrong. Please try again.') }]);
         } finally {
@@ -954,9 +961,28 @@ export default function CourseDetailPage() {
                                         {docChatMessages.map((msg, i) => (
                                             <div key={i} className={`cd-doc-view-msg cd-doc-view-msg-${msg.role}`}>
                                                 <span className="cd-doc-view-msg-role">{msg.role === 'user' ? 'You' : 'Saarthi'}</span>
-                                                <div className="cd-doc-view-msg-content">{msg.content}</div>
+                                                <div
+                                                    className="cd-doc-view-msg-content"
+                                                    dangerouslySetInnerHTML={{
+                                                        __html: msg.content
+                                                            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                                                            .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                                                            .replace(/`(.+?)`/g, '<code>$1</code>')
+                                                            .replace(/^#{1,3} (.+)$/gm, '<strong>$1</strong>')
+                                                            .replace(/\n/g, '<br/>')
+                                                    }}
+                                                />
                                             </div>
                                         ))}
+                                        {docChatFollowups.length > 0 && !docChatSending && (
+                                            <div className="cd-doc-followups">
+                                                {docChatFollowups.map((q, i) => (
+                                                    <button key={i} className="cd-doc-followup-chip" onClick={() => { setDocChatInput(q); setDocChatFollowups([]); }}>
+                                                        {q}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
                                         {docChatSending && (
                                             <div className="cd-doc-view-msg cd-doc-view-msg-assistant">
                                                 <span className="cd-doc-view-msg-role">Saarthi</span>
