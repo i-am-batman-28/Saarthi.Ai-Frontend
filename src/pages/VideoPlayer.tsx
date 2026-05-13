@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Play, Pause, RotateCcw, Volume2, Maximize, FileText, CheckCircle2, ChevronRight, Clock, Plus } from 'lucide-react';
+import { Play, Pause, RotateCcw, Volume2, Maximize, FileText, CheckCircle2, ChevronRight, Clock, Plus, MessageCircle, Send } from 'lucide-react';
 import { api, type VideoResponse, type VideoNoteResponse } from '../lib/api';
 import { usePageTitle } from '../lib/usePageTitle';
+import MathContent from '../components/MathContent';
 import './VideoPlayer.css';
 
 interface Chapter {
@@ -43,6 +44,12 @@ export default function VideoPlayerPage() {
     const [currentTime, setCurrentTime] = useState(0);
     const [volume, setVolume] = useState(1);
     const [playbackRate, setPlaybackRate] = useState(1);
+
+    const [activeTab, setActiveTab] = useState<'notes' | 'chat'>('notes');
+    const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
+    const [chatInput, setChatInput] = useState('');
+    const [chatLoading, setChatLoading] = useState(false);
+    const chatBottomRef = useRef<HTMLDivElement>(null);
 
     const isEmbed = Boolean(video?.embedUrl);
     const chapters: Chapter[] = video ? parseChapters(video.chaptersJson) : [];
@@ -134,6 +141,32 @@ export default function VideoPlayerPage() {
             setNewNote('');
         } catch {
             // ignore
+        }
+    };
+
+    useEffect(() => {
+        chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [chatMessages]);
+
+    const sendChatMessage = async () => {
+        if (!chatInput.trim() || chatLoading || !video) return;
+        const userMsg = chatInput.trim();
+        setChatInput('');
+        setChatMessages(prev => [...prev, { role: 'user', content: userMsg }]);
+        setChatLoading(true);
+        try {
+            const history = chatMessages.map(m => ({ role: m.role, content: m.content }));
+            const res = await api.post<{ response: string }>('/chat/message', {
+                message: userMsg,
+                conversationHistory: history,
+                contextVideoId: parseInt(video.id),
+                contextVideoTitle: video.title,
+            });
+            setChatMessages(prev => [...prev, { role: 'assistant', content: res.response }]);
+        } catch {
+            setChatMessages(prev => [...prev, { role: 'assistant', content: 'Something went wrong. Please try again.' }]);
+        } finally {
+            setChatLoading(false);
         }
     };
 
@@ -256,12 +289,24 @@ export default function VideoPlayerPage() {
 
                 <div className="video-content-tabs">
                     <div className="tabs-header">
-                        <button type="button" className="tab-btn active">
+                        <button
+                            type="button"
+                            className={`tab-btn ${activeTab === 'notes' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('notes')}
+                        >
                             <FileText size={16} /> My Notes
+                        </button>
+                        <button
+                            type="button"
+                            className={`tab-btn ${activeTab === 'chat' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('chat')}
+                        >
+                            <MessageCircle size={16} /> Ask AI
+                            {video.hasTranscript && <span className="transcript-badge">Transcript</span>}
                         </button>
                     </div>
                     <div className="tab-content">
-                        {(
+                        {activeTab === 'notes' && (
                             <div className="notes-section">
                                 <div className="add-note-box">
                                     {isEmbed && (
@@ -295,6 +340,53 @@ export default function VideoPlayerPage() {
                                             <p className="note-text">{note.text}</p>
                                         </div>
                                     ))}
+                                </div>
+                            </div>
+                        )}
+                        {activeTab === 'chat' && (
+                            <div className="video-chat-section">
+                                {!video.hasTranscript && (
+                                    <div className="video-chat-notice">
+                                        No transcript uploaded for this video. AI will answer from general course knowledge.
+                                    </div>
+                                )}
+                                <div className="video-chat-messages">
+                                    {chatMessages.length === 0 && (
+                                        <p className="video-chat-empty">Ask anything about this video lecture.</p>
+                                    )}
+                                    {chatMessages.map((msg, i) => (
+                                        <div key={i} className={`video-chat-bubble ${msg.role}`}>
+                                            {msg.role === 'assistant'
+                                                ? <MathContent content={msg.content} streaming={false} />
+                                                : <span>{msg.content}</span>
+                                            }
+                                        </div>
+                                    ))}
+                                    {chatLoading && (
+                                        <div className="video-chat-bubble assistant">
+                                            <span className="chat-cursor" />
+                                        </div>
+                                    )}
+                                    <div ref={chatBottomRef} />
+                                </div>
+                                <div className="video-chat-input-row">
+                                    <input
+                                        type="text"
+                                        className="input"
+                                        placeholder="Ask about this video..."
+                                        value={chatInput}
+                                        onChange={(e) => setChatInput(e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Enter' && sendChatMessage()}
+                                        disabled={chatLoading}
+                                    />
+                                    <button
+                                        type="button"
+                                        className="btn btn-primary btn-sm"
+                                        onClick={sendChatMessage}
+                                        disabled={chatLoading || !chatInput.trim()}
+                                    >
+                                        <Send size={14} />
+                                    </button>
                                 </div>
                             </div>
                         )}

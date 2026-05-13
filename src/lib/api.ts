@@ -178,6 +178,7 @@ export interface VideoResponse {
   embedUrl?: string;
   chaptersJson?: string;
   sortOrder: number;
+  hasTranscript: boolean;
 }
 
 export interface VideoNoteResponse {
