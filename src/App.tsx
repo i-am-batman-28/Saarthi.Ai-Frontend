@@ -73,6 +73,7 @@ function App() {
           <Route path="/chat" element={<ChatPage />} />
           <Route path="/quiz" element={<QuizPage />} />
           <Route path="/code-lab" element={<CodeLabPage />} />
+          <Route path="/code-lab/:id" element={<CodeLabPage />} />
           <Route path="/videos" element={<VideosPage />} />
           <Route path="/videos/:id" element={<VideoPlayerPage />} />
           <Route path="/progress" element={<ProgressPage />} />

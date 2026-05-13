@@ -199,6 +199,20 @@ export interface NoteResponse {
   updatedAt: string;
 }
 
+export interface CodeProblemResponse {
+  id: number;
+  title: string;
+  difficulty: string;
+  points: number;
+  description: string;
+  requirements: string[];
+  expectedOutput?: string;
+  hints: string[];
+  starterCode: Record<string, string>;
+  topics?: string;
+  sortOrder: number;
+}
+
 async function request<T>(
   path: string,
   options: RequestInit & { params?: Record<string, string | number | undefined> } = {}

@@ -1,11 +1,14 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
     Play, RotateCcw, Copy, Check, ChevronDown, Terminal,
     Activity, FileText, Loader2, Sparkles, AlertTriangle,
-    CheckCircle2, Brain, X, ChevronUp,
+    CheckCircle2, Brain, X, ChevronUp, ArrowLeft, BookOpen,
+    ChevronRight, Zap,
 } from 'lucide-react';
 import GraphOutput from '../components/GraphOutput';
-import { api } from '../lib/api';
+import { api, type CodeProblemResponse } from '../lib/api';
+import { usePageTitle } from '../lib/usePageTitle';
 import './CodeLab.css';
 
 // ── Language config ───────────────────────────────────────────────────────────
@@ -22,158 +25,23 @@ const LANGUAGES = [
     { key: 'r',          label: 'R',           ext: 'r',   color: '#EC4899' },
 ];
 
-const STARTER_CODE: Record<string, string> = {
-    python: `import numpy as np
-
-# Butterworth Low-Pass Filter (manual computation)
-def butterworth_magnitude(f, cutoff=1000, order=4):
-    return 1 / np.sqrt(1 + (f / cutoff) ** (2 * order))
-
-freqs = np.linspace(0, 4000, 200)
-magnitudes_db = 20 * np.log10(butterworth_magnitude(freqs))
-
-print("Butterworth Filter Frequency Response")
-print(f"{'Freq (Hz)':>10} | {'Magnitude (dB)':>14}")
-print("-" * 28)
-for f, m in zip(freqs[::20], magnitudes_db[::20]):
-    print(f"{f:>10.0f} | {m:>14.2f}")
-
-print(f"\\n-3dB point at: {1000:.0f} Hz")
-print(f"Roll-off: {-20 * 4:.0f} dB/decade after cutoff")
-`,
-    javascript: `// Butterworth filter magnitude response
-function butterworthMag(f, cutoff = 1000, order = 4) {
-  return 1 / Math.sqrt(1 + Math.pow(f / cutoff, 2 * order));
-}
-
-console.log("Butterworth Filter Response");
-console.log("Freq (Hz) | Magnitude (dB)");
-console.log("-".repeat(28));
-
-for (let f = 0; f <= 4000; f += 400) {
-  const mag = 20 * Math.log10(butterworthMag(f));
-  console.log(\`\${String(f).padStart(9)} | \${mag.toFixed(2).padStart(13)}\`);
-}
-`,
-    cpp: `#include <iostream>
-#include <cmath>
-#include <iomanip>
-
-double butterworthMag(double f, double cutoff = 1000, int order = 4) {
-    return 1.0 / std::sqrt(1.0 + std::pow(f / cutoff, 2 * order));
-}
-
-int main() {
-    std::cout << "Butterworth Filter Response\\n";
-    std::cout << std::setw(10) << "Freq (Hz)" << " | "
-              << std::setw(14) << "Magnitude (dB)" << "\\n";
-    std::cout << std::string(28, '-') << "\\n";
-
-    for (int f = 0; f <= 4000; f += 400) {
-        double mag = 20.0 * std::log10(butterworthMag(f));
-        std::cout << std::setw(10) << f << " | "
-                  << std::setw(14) << std::fixed << std::setprecision(2) << mag << "\\n";
-    }
-    return 0;
-}
-`,
-    c: `#include <stdio.h>
-#include <math.h>
-
-double butterworthMag(double f, double cutoff, int order) {
-    return 1.0 / sqrt(1.0 + pow(f / cutoff, 2 * order));
-}
-
-int main() {
-    printf("Butterworth Filter Response\\n");
-    printf("%10s | %14s\\n", "Freq (Hz)", "Magnitude (dB)");
-    for (int f = 0; f <= 4000; f += 400) {
-        double mag = 20.0 * log10(butterworthMag((double)f, 1000.0, 4));
-        printf("%10d | %14.2f\\n", f, mag);
-    }
-    return 0;
-}
-`,
-    java: `public class Main {
-    static double butterworthMag(double f, double cutoff, int order) {
-        return 1.0 / Math.sqrt(1.0 + Math.pow(f / cutoff, 2 * order));
-    }
-
-    public static void main(String[] args) {
-        System.out.println("Butterworth Filter Response");
-        System.out.printf("%10s | %14s%n", "Freq (Hz)", "Magnitude (dB)");
-        System.out.println("-".repeat(28));
-        for (int f = 0; f <= 4000; f += 400) {
-            double mag = 20.0 * Math.log10(butterworthMag(f, 1000, 4));
-            System.out.printf("%10d | %14.2f%n", f, mag);
-        }
-    }
-}
-`,
-    rust: `fn butterworth_mag(f: f64, cutoff: f64, order: u32) -> f64 {
-    1.0 / (1.0 + (f / cutoff).powi(2 * order as i32)).sqrt()
-}
-
-fn main() {
-    println!("Butterworth Filter Response");
-    println!("{:>10} | {:>14}", "Freq (Hz)", "Magnitude (dB)");
-    println!("{}", "-".repeat(28));
-    let mut f = 0.0_f64;
-    while f <= 4000.0 {
-        let mag = 20.0 * butterworth_mag(f, 1000.0, 4).log10();
-        println!("{:>10.0} | {:>14.2}", f, mag);
-        f += 400.0;
-    }
-}
-`,
-    go: `package main
-
-import (
-	"fmt"
-	"math"
-)
-
-func butterworthMag(f, cutoff float64, order int) float64 {
-	return 1.0 / math.Sqrt(1.0+math.Pow(f/cutoff, float64(2*order)))
-}
-
-func main() {
-	fmt.Println("Butterworth Filter Response")
-	fmt.Printf("%10s | %14s\\n", "Freq (Hz)", "Magnitude (dB)")
-	for f := 0.0; f <= 4000; f += 400 {
-		mag := 20.0 * math.Log10(butterworthMag(f, 1000, 4))
-		fmt.Printf("%10.0f | %14.2f\\n", f, mag)
-	}
-}
-`,
-    bash: `#!/bin/bash
-echo "Butterworth Filter Response (approximation)"
-echo "Freq (Hz) | Note"
-echo "----------+------------------"
-echo "       0  | 0.00 dB (passband)"
-echo "     500  | -0.97 dB"
-echo "    1000  | -3.01 dB (cutoff)"
-echo "    2000  | -18.06 dB"
-echo "    4000  | -48.13 dB (stopband)"
-echo ""
-echo "Order: 4 | Cutoff: 1000 Hz | Roll-off: 80 dB/decade"
-`,
-    r: `# Butterworth filter magnitude response
-butterworth_mag <- function(f, cutoff = 1000, order = 4) {
-  1 / sqrt(1 + (f / cutoff)^(2 * order))
-}
-
-freqs <- seq(0, 4000, by = 400)
-mags  <- 20 * log10(butterworth_mag(freqs))
-
-cat("Butterworth Filter Response\\n")
-cat(sprintf("%10s | %14s\\n", "Freq (Hz)", "Magnitude (dB)"))
-cat(strrep("-", 28), "\\n")
-for (i in seq_along(freqs)) {
-  cat(sprintf("%10.0f | %14.2f\\n", freqs[i], mags[i]))
-}
-`,
+const FALLBACK_STARTER: Record<string, string> = {
+    python: '# Write your solution here\n',
+    javascript: '// Write your solution here\n',
+    cpp: '#include <iostream>\nusing namespace std;\n\nint main() {\n    // Write your solution here\n    return 0;\n}\n',
+    c: '#include <stdio.h>\n\nint main() {\n    // Write your solution here\n    return 0;\n}\n',
+    java: 'public class Main {\n    public static void main(String[] args) {\n        // Write your solution here\n    }\n}\n',
+    rust: 'fn main() {\n    // Write your solution here\n}\n',
+    go: 'package main\n\nimport "fmt"\n\nfunc main() {\n    // Write your solution here\n    fmt.Println("Hello")\n}\n',
+    bash: '#!/bin/bash\n# Write your solution here\n',
+    r: '# Write your solution here\n',
 };
+
+function difficultyBadge(d: string) {
+    if (d === 'easy') return 'badge-success';
+    if (d === 'hard') return 'badge-danger';
+    return 'badge-warning';
+}
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -228,11 +96,173 @@ function AIExplanationPanel({
     );
 }
 
+// ── Problem List ──────────────────────────────────────────────────────────────
+
+function ProblemList({
+    problems, loading, error,
+}: {
+    problems: CodeProblemResponse[]; loading: boolean; error: string | null;
+}) {
+    const navigate = useNavigate();
+
+    if (loading) {
+        return (
+            <div className="codelab-problem">
+                <div className="codelab-problem-header">
+                    <h2>Coding Lab</h2>
+                    <span className="cl-problem-sub">DSP · ML · Algorithms</span>
+                </div>
+                <div className="codelab-problem-body">
+                    {[1, 2, 3, 4].map(i => (
+                        <div key={i} className="cl-problem-card skeleton" style={{ height: '5rem', marginBottom: '0.625rem' }} />
+                    ))}
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="codelab-problem">
+                <div className="codelab-problem-header">
+                    <h2>Coding Lab</h2>
+                </div>
+                <div className="codelab-problem-body">
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{error}</p>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="codelab-problem">
+            <div className="codelab-problem-header">
+                <div>
+                    <h2>Coding Lab</h2>
+                    <span className="cl-problem-sub">DSP · ML · Algorithms</span>
+                </div>
+            </div>
+            <div className="codelab-problem-body">
+                <p className="cl-pick-label">Select a problem to get started</p>
+                <div className="cl-problem-list">
+                    {problems.map(p => (
+                        <button
+                            key={p.id}
+                            className="cl-problem-card"
+                            onClick={() => navigate(`/code-lab/${p.id}`)}
+                        >
+                            <div className="cl-problem-card-top">
+                                <span className="cl-problem-card-title">{p.title}</span>
+                                <ChevronRight size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                            </div>
+                            <div className="cl-problem-card-meta">
+                                <span className={`badge ${difficultyBadge(p.difficulty)}`} style={{ fontSize: '0.7rem' }}>{p.difficulty}</span>
+                                <span className="cl-pts"><Zap size={11} />{p.points} pts</span>
+                                {p.topics && <span className="cl-topic">{p.topics}</span>}
+                            </div>
+                        </button>
+                    ))}
+                </div>
+                <div className="cl-ai-callout">
+                    <Brain size={16} style={{ color: 'var(--accent)', flexShrink: 0, marginTop: 2 }} />
+                    <div>
+                        <strong>AI-powered feedback</strong>
+                        <span>Run code with an error and the AI instantly explains what went wrong and how to fix it.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ── Problem Detail Panel ──────────────────────────────────────────────────────
+
+function ProblemPanel({
+    problem, onPreviewGraph,
+}: {
+    problem: CodeProblemResponse; onPreviewGraph: () => void;
+}) {
+    const navigate = useNavigate();
+    return (
+        <div className="codelab-problem">
+            <div className="codelab-problem-header">
+                <button className="btn btn-ghost btn-sm" style={{ marginRight: '0.25rem' }} onClick={() => navigate('/code-lab')}>
+                    <ArrowLeft size={14} />
+                </button>
+                <div>
+                    <h2 style={{ margin: 0, fontSize: '1rem' }}>{problem.title}</h2>
+                    <span className="cl-problem-sub">{problem.topics ?? 'Coding Lab'}</span>
+                </div>
+            </div>
+            <div className="codelab-problem-body">
+                <div className="problem-meta">
+                    <span className={`badge ${difficultyBadge(problem.difficulty)}`}>{problem.difficulty}</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{problem.points} pts</span>
+                </div>
+
+                <p style={{ fontSize: '0.875rem', lineHeight: 1.6 }}>{problem.description}</p>
+
+                {problem.requirements.length > 0 && (
+                    <>
+                        <h4>Requirements</h4>
+                        <ul>
+                            {problem.requirements.map((r, i) => <li key={i}>{r}</li>)}
+                        </ul>
+                    </>
+                )}
+
+                {problem.expectedOutput && (
+                    <>
+                        <h4>Expected output</h4>
+                        <div className="cl-expected-output">
+                            <pre>{problem.expectedOutput}</pre>
+                        </div>
+                    </>
+                )}
+
+                <div className="codelab-buttons-stack">
+                    <button className="btn btn-outline btn-sm" onClick={onPreviewGraph}>
+                        <Activity size={14} /> Preview Graph
+                    </button>
+                </div>
+
+                {problem.hints.length > 0 && (
+                    <>
+                        <h4>Hints</h4>
+                        {problem.hints.map((h, i) => (
+                            <div key={i} className="codelab-hint">
+                                <p>{h}</p>
+                            </div>
+                        ))}
+                    </>
+                )}
+
+                <div className="cl-ai-callout">
+                    <Brain size={16} style={{ color: 'var(--accent)', flexShrink: 0, marginTop: 2 }} />
+                    <div>
+                        <strong>AI-powered feedback</strong>
+                        <span>Run code with an error and the AI instantly explains what went wrong and how to fix it.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function CodeLabPage() {
+    const { id } = useParams<{ id?: string }>();
+    const navigate = useNavigate();
+
+    const [problems, setProblems] = useState<CodeProblemResponse[]>([]);
+    const [problem, setProblem] = useState<CodeProblemResponse | null>(null);
+    const [listLoading, setListLoading] = useState(true);
+    const [listError, setListError] = useState<string | null>(null);
+    const [problemLoading, setProblemLoading] = useState(false);
+
     const [language, setLanguage] = useState('python');
-    const [code, setCode] = useState(STARTER_CODE['python']);
+    const [code, setCode] = useState(FALLBACK_STARTER['python']);
     const [running, setRunning] = useState(false);
     const [result, setResult] = useState<ExecResult | null>(null);
     const [copied, setCopied] = useState(false);
@@ -248,7 +278,41 @@ export default function CodeLabPage() {
     const [showStdin, setShowStdin] = useState(false);
     const outputRef = useRef<HTMLPreElement>(null);
 
-    // Scroll output to bottom
+    usePageTitle(problem ? problem.title : 'Coding Lab');
+
+    // Fetch all problems for list view
+    useEffect(() => {
+        let cancelled = false;
+        setListLoading(true);
+        api.get<CodeProblemResponse[]>('/code/problems')
+            .then(list => { if (!cancelled) setProblems(list || []); })
+            .catch(e => { if (!cancelled) setListError(e instanceof Error ? e.message : 'Failed to load problems'); })
+            .finally(() => { if (!cancelled) setListLoading(false); });
+        return () => { cancelled = true; };
+    }, []);
+
+    // When id changes, fetch that specific problem
+    useEffect(() => {
+        if (!id) { setProblem(null); return; }
+        let cancelled = false;
+        setProblemLoading(true);
+        api.get<CodeProblemResponse>(`/code/problems/${id}`)
+            .then(p => {
+                if (cancelled) return;
+                setProblem(p);
+                // Set starter code for current language, fall back to generic
+                const starter = p.starterCode[language] ?? FALLBACK_STARTER[language] ?? '';
+                setCode(starter);
+                setResult(null);
+                setAiExplanation('');
+                setShowGraph(false);
+                setActiveTab('console');
+            })
+            .catch(() => { if (!cancelled) navigate('/code-lab'); })
+            .finally(() => { if (!cancelled) setProblemLoading(false); });
+        return () => { cancelled = true; };
+    }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
+
     useEffect(() => {
         if (outputRef.current) outputRef.current.scrollTop = outputRef.current.scrollHeight;
     }, [result]);
@@ -275,7 +339,7 @@ export default function CodeLabPage() {
                 method: 'POST',
                 credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ code, language: lang, stderr, exitCode, stdout, courseContext: 'Engineering' }),
+                body: JSON.stringify({ code, language: lang, stderr, exitCode, stdout, courseContext: problem?.topics ?? 'Engineering' }),
             });
 
             if (!resp.body) return;
@@ -296,7 +360,7 @@ export default function CodeLabPage() {
                     setAiExplanation(prev => prev + token.replace(/\\n/g, '\n'));
                 }
             }
-        } catch (e) {
+        } catch {
             setAiExplanation('Unable to stream explanation. Check your connection.');
         } finally {
             setAiStreaming(false);
@@ -324,21 +388,15 @@ export default function CodeLabPage() {
             if (hasError) {
                 streamAIExplanation(code, language, resp.result.stderr, resp.result.exitCode);
             } else {
-                // Always stream an AI insight on success too
                 streamAIExplanation(code, language, '', 0, resp.result.stdout);
-                if (language === 'python' && code.includes('butterworth')) {
+                if (language === 'python' && code.toLowerCase().includes('butterworth')) {
                     setGraphData(generateGraphData());
                     setShowGraph(true);
                 }
             }
-        } catch (e: any) {
-            setResult({
-                stdout: '',
-                stderr: e?.message || 'Failed to reach execution service.',
-                exitCode: 1,
-                language,
-                runtime: language,
-            });
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : 'Failed to reach execution service.';
+            setResult({ stdout: '', stderr: msg, exitCode: 1, language, runtime: language });
         } finally {
             setRunning(false);
         }
@@ -352,7 +410,10 @@ export default function CodeLabPage() {
 
     const changeLang = (lang: string) => {
         setLanguage(lang);
-        setCode(STARTER_CODE[lang] ?? '');
+        const starter = problem
+            ? (problem.starterCode[lang] ?? FALLBACK_STARTER[lang] ?? '')
+            : (FALLBACK_STARTER[lang] ?? '');
+        setCode(starter);
         setShowLangDropdown(false);
         setResult(null);
         setAiExplanation('');
@@ -361,7 +422,10 @@ export default function CodeLabPage() {
     };
 
     const resetCode = () => {
-        setCode(STARTER_CODE[language] ?? '');
+        const starter = problem
+            ? (problem.starterCode[language] ?? FALLBACK_STARTER[language] ?? '')
+            : (FALLBACK_STARTER[language] ?? '');
+        setCode(starter);
         setResult(null);
         setAiExplanation('');
         setShowGraph(false);
@@ -374,63 +438,31 @@ export default function CodeLabPage() {
     return (
         <div className="codelab-page">
             {/* ── Problem / Info panel ── */}
-            <div className="codelab-problem">
-                <div className="codelab-problem-header">
-                    <div>
-                        <h2>Coding Lab</h2>
-                        <span className="cl-problem-sub">DSP · ML · Algorithms</span>
+            {id ? (
+                problemLoading ? (
+                    <div className="codelab-problem">
+                        <div className="codelab-problem-header">
+                            <div className="skeleton" style={{ width: '60%', height: '1.25rem', borderRadius: 4 }} />
+                        </div>
+                        <div className="codelab-problem-body">
+                            {[1, 2, 3].map(i => (
+                                <div key={i} className="skeleton" style={{ height: '3rem', marginBottom: '0.625rem', borderRadius: 6 }} />
+                            ))}
+                        </div>
                     </div>
-                </div>
-                <div className="codelab-problem-body">
-                    <div className="problem-meta">
-                        <span className="badge badge-warning">Medium</span>
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>50 pts</span>
-                    </div>
-
-                    <p>Implement and test a Butterworth low-pass filter. Print the frequency response showing magnitude in dB at key frequencies.</p>
-
-                    <h4>Requirements</h4>
-                    <ul>
-                        <li><strong>Order:</strong> 4</li>
-                        <li><strong>Cutoff:</strong> 1000 Hz</li>
-                        <li><strong>Sampling rate:</strong> 8000 Hz</li>
-                        <li>Print magnitude table (dB vs Hz)</li>
-                        <li>Show -3dB point at cutoff</li>
-                    </ul>
-
-                    <h4>Expected output</h4>
-                    <div className="cl-expected-output">
-                        <pre>{`Freq (Hz) | Magnitude (dB)
-       0  |  0.00
-    1000  | -3.01
-    4000  | -48.1`}</pre>
-                    </div>
-
-                    <div className="codelab-buttons-stack">
-                        <button className="btn btn-outline btn-sm" onClick={() => {
+                ) : problem ? (
+                    <ProblemPanel
+                        problem={problem}
+                        onPreviewGraph={() => {
                             setGraphData(generateGraphData());
                             setShowGraph(true);
                             setActiveTab('graph');
-                        }}>
-                            <Activity size={14} /> Preview Graph
-                        </button>
-                    </div>
-
-                    <h4>Hints</h4>
-                    <div className="codelab-hint">
-                        <p>H(f) = 1 / √(1 + (f/fc)^(2n)) — compute this for each frequency point.</p>
-                    </div>
-
-                    {/* AI features callout */}
-                    <div className="cl-ai-callout">
-                        <Brain size={16} style={{ color: 'var(--accent)', flexShrink: 0, marginTop: 2 }} />
-                        <div>
-                            <strong>AI-powered feedback</strong>
-                            <span>Run code with an error and the AI instantly explains what went wrong and how to fix it.</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                        }}
+                    />
+                ) : null
+            ) : (
+                <ProblemList problems={problems} loading={listLoading} error={listError} />
+            )}
 
             {/* ── Editor panel ── */}
             <div className="codelab-editor-panel">
@@ -513,7 +545,6 @@ export default function CodeLabPage() {
                         className="codelab-textarea"
                         spellCheck={false}
                         onKeyDown={e => {
-                            // Tab inserts 4 spaces instead of losing focus
                             if (e.key === 'Tab') {
                                 e.preventDefault();
                                 const el = e.currentTarget;
@@ -528,6 +559,14 @@ export default function CodeLabPage() {
                         }}
                     />
                 </div>
+
+                {/* No problem selected overlay */}
+                {!id && (
+                    <div className="cl-no-problem-overlay">
+                        <BookOpen size={32} style={{ color: 'var(--text-muted)', marginBottom: '0.75rem' }} />
+                        <p>Select a problem from the left panel to load its starter code.</p>
+                    </div>
+                )}
 
                 {/* Output tabs */}
                 <div className="codelab-output-section">
