@@ -983,8 +983,9 @@
 }
 
 .cd-doc-section {
-    background: var(--card-bg);
+    background: var(--gray-50);
     border: 1px solid var(--border);
+    border-left: 3px solid var(--primary-200);
     border-radius: var(--radius-md);
     padding: 0.75rem 0.875rem;
     display: flex;
@@ -993,18 +994,28 @@
 }
 
 .cd-doc-section-title {
-    font-size: 0.8rem;
+    font-size: 0.72rem;
     font-weight: 700;
-    color: var(--primary);
+    color: var(--gray-500);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.07em;
 }
 
 .cd-doc-section-body {
     font-size: 0.875rem;
-    line-height: 1.65;
+    line-height: 1.7;
     color: var(--foreground);
-    white-space: pre-wrap;
+}
+.cd-doc-section-body ul {
+    margin: 0.25rem 0 0.25rem 1rem;
+    padding: 0;
+}
+.cd-doc-section-body li {
+    margin-bottom: 0.2rem;
+}
+.cd-doc-section-body .katex-display {
+    margin: 0.5rem 0;
+    overflow-x: auto;
 }
 
 /* ── Checkpoint row ── */
@@ -1021,12 +1032,6 @@
     font-size: 0.75rem;
     color: var(--gray-500);
     margin-right: 0.2rem;
-}
-
-.cd-doc-checkpoint-done {
-    font-size: 0.75rem;
-    color: #16a34a;
-    font-weight: 600;
 }
 
 .cd-doc-checkpoint-pending {
@@ -1061,14 +1066,21 @@
 .cd-doc-chip-starter:hover { background: var(--gray-200); }
 
 .cd-doc-chip-yes {
-    background: #dcfce7;
-    color: #15803d;
+    background: var(--primary-100);
+    color: var(--primary-700);
 }
-.cd-doc-chip-yes:hover { background: #bbf7d0; }
+.cd-doc-chip-yes:hover { background: var(--primary-200); }
+
+.cd-doc-checkpoint-done {
+    font-size: 0.75rem;
+    color: var(--primary);
+    font-weight: 600;
+}
 
 .cd-doc-chip-no {
     background: var(--gray-100);
-    color: var(--gray-600);
+    color: var(--gray-700);
+    border: 1px solid var(--border);
 }
 .cd-doc-chip-no:hover { background: var(--gray-200); }
 

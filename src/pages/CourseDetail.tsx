@@ -12,6 +12,7 @@ import FileDropzone from '../components/FileDropzone';
 import ConfirmModal from '../components/ConfirmModal';
 import EmptyState from '../components/EmptyState';
 import { useToast } from '../components/Toast';
+import { renderMath } from '../lib/renderMath';
 import './CourseDetail.css';
 
 const PAGE_SIZE = 20;
@@ -1018,7 +1019,7 @@ export default function CourseDetailPage() {
                                                             {msg.sections.map((sec, secIdx) => (
                                                                 <div key={secIdx} className="cd-doc-section">
                                                                     {sec.title && <div className="cd-doc-section-title">{sec.title}</div>}
-                                                                    <div className="cd-doc-section-body">{sec.body}</div>
+                                                                    <div className="cd-doc-section-body" dangerouslySetInnerHTML={{ __html: renderMath(sec.body) }} />
                                                                     <div className="cd-doc-section-checkpoint">
                                                                         {sec.understood === null ? (
                                                                             <>
