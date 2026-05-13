@@ -28,6 +28,7 @@ interface CoursePreview {
     instructor: string;
     description: string;
     topics: TopicPreview[];
+    sourceFileUrl?: string;
 }
 
 interface VideoPreview {
@@ -340,13 +341,13 @@ export default function AIChatbot({ position = 'bottom-right' }: AIChatbotProps)
     const executeCourse = async (preview: CoursePreview) => {
         setIsExecuting(true);
         try {
-            const result = await api.post<{ courseId: string; title: string; topicsCreated: number; assignmentsCreated: number }>('/teacher/execute/course', {
+            const result = await api.post<{ courseId: string; title: string; topicsCreated: number; assignmentsCreated: number; materialsCreated: number }>('/teacher/execute/course', {
                 coursePreview: preview,
                 instructorName: user?.fullName || user?.name || 'Instructor',
             });
             setMessages(prev => prev.map(m =>
                 m.preview?.intent === 'create_course'
-                    ? { ...m, content: `✓ Course **"${result.title}"** created — ${result.topicsCreated} topics and ${result.assignmentsCreated} assignments scaffolded.\n\n→ Go to **Courses** to see it. [Open Courses](/courses)`, preview: undefined }
+                    ? { ...m, content: `✓ Course **"${result.title}"** created — ${result.topicsCreated} topics, ${result.assignmentsCreated} assignments, and ${result.materialsCreated} material${result.materialsCreated !== 1 ? 's' : ''} added.\n\n→ Go to **Courses** to see it. [Open Courses](/courses)`, preview: undefined }
                     : m
             ));
         } catch {
