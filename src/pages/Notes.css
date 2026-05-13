@@ -243,7 +243,7 @@
     max-height: calc(100vh - 8vh);
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+
 }
 
 .notes-modal-header {
@@ -282,8 +282,9 @@
 
 .notes-modal-body {
     padding: 1.5rem;
-    overflow-y: auto;
     flex: 1;
+    min-height: 0;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
     gap: 1.25rem;

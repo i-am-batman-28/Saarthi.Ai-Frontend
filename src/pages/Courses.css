@@ -95,7 +95,7 @@
     display: flex;
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    overflow: hidden;
+
 }
 
 .courses-view-toggle button {
@@ -170,7 +170,7 @@
     background: var(--surface-1);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
-    overflow: hidden;
+
     transition: transform 0.2s, box-shadow 0.2s;
 }
 
@@ -293,7 +293,7 @@
     height: 6px;
     background: var(--surface-3);
     border-radius: 3px;
-    overflow: hidden;
+
 }
 
 .course-card-progress-fill {
@@ -355,7 +355,7 @@
     background: var(--card-bg);
     border-radius: var(--radius-lg);
     border: 1px solid var(--border);
-    overflow: hidden;
+
 }
 
 .course-card-skeleton.grid {
@@ -461,7 +461,7 @@
     flex-direction: column;
     box-shadow: var(--shadow-xl);
     max-height: calc(100vh - 8vh);
-    overflow: hidden;
+
 }
 
 .course-modal-header {
@@ -496,6 +496,7 @@
 .course-modal-body {
     padding: 1.5rem;
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
