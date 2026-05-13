@@ -302,7 +302,6 @@ export default function VideoPlayerPage() {
                             onClick={() => setActiveTab('chat')}
                         >
                             <MessageCircle size={16} /> Ask AI
-                            {video.hasTranscript && <span className="transcript-badge">Transcript</span>}
                         </button>
                     </div>
                     <div className="tab-content">
@@ -345,11 +344,6 @@ export default function VideoPlayerPage() {
                         )}
                         {activeTab === 'chat' && (
                             <div className="video-chat-section">
-                                {!video.hasTranscript && (
-                                    <div className="video-chat-notice">
-                                        No transcript uploaded for this video. AI will answer from general course knowledge.
-                                    </div>
-                                )}
                                 <div className="video-chat-messages">
                                     {chatMessages.length === 0 && (
                                         <p className="video-chat-empty">Ask anything about this video lecture.</p>
