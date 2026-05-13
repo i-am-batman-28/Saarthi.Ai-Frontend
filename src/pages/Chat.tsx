@@ -7,6 +7,7 @@ import {
 import { api, type ConversationResponse, type ConversationDetailResponse, type SendMessageResponse, type PaginatedResponse } from '../lib/api';
 import ConfirmModal from '../components/ConfirmModal';
 import EmptyState from '../components/EmptyState';
+import MathContent from '../components/MathContent';
 import './Chat.css';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
@@ -65,44 +66,6 @@ function useVoiceInput(onTranscript: (text: string) => void) {
 }
 
 // ── Message renderer ──────────────────────────────────────────────────────────
-function MessageContent({ content, streaming }: { content: string; streaming?: boolean }) {
-    return (
-        <div className="chat-msg-text">
-            {content.split(/```/).map((part, i) => {
-                if (i % 2 === 1) {
-                    const lines = part.split('\n');
-                    const lang = lines[0].trim();
-                    const code = lang ? lines.slice(1).join('\n') : part;
-                    return (
-                        <pre key={i} className="chat-code-block">
-                            {lang && <span className="chat-code-lang">{lang}</span>}
-                            <code>{code}</code>
-                        </pre>
-                    );
-                }
-                return (
-                    <div key={i}>
-                        {part.split('\n').map((line, k) => (
-                            <p key={k} className="chat-msg-p">
-                                {line.split(/(\[Source: .*?\]|\*\*.*?\*\*)/g).map((sub, j) => {
-                                    if (sub.startsWith('[Source:')) {
-                                        const src = sub.match(/\[Source: (.*?)\]/)?.[1];
-                                        return <span key={j} className="chat-source badge badge-success badge-sm">📚 {src}</span>;
-                                    }
-                                    if (sub.startsWith('**') && sub.endsWith('**')) {
-                                        return <strong key={j}>{sub.slice(2, -2)}</strong>;
-                                    }
-                                    return sub;
-                                })}
-                            </p>
-                        ))}
-                    </div>
-                );
-            })}
-            {streaming && <span className="chat-cursor" />}
-        </div>
-    );
-}
 
 // ── Main component ─────────────────────────────────────────────────────────────
 export default function ChatPage() {
@@ -410,7 +373,7 @@ export default function ChatPage() {
                                                 <span>Saarthi is thinking...</span>
                                             </div>
                                         ) : (
-                                            <MessageContent content={msg.content} streaming={msg.streaming} />
+                                            <MathContent content={msg.content} streaming={msg.streaming} />
                                         )}
                                     </div>
                                 </div>

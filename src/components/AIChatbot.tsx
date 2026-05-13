@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { MessageCircle, X, Send, Loader2, User, Bot } from 'lucide-react';
 import { LogoIcon } from './LogoIcon';
 import { api, uploadDataset } from '../lib/api';
+import MathContent from './MathContent';
 import './AIChatbot.css';
 
 interface Message {
@@ -282,53 +283,7 @@ export default function AIChatbot({ position = 'bottom-right' }: AIChatbotProps)
                                     }}
                                 >
                                     <div style={{ fontSize: '0.875rem', lineHeight: '1.6', margin: 0 }}>
-                                        {message.content.split(/```/).map((part, i) => {
-                                            if (i % 2 === 1) {
-                                                return (
-                                                    <pre key={i} style={{
-                                                        background: '#1F2937',
-                                                        color: '#E5E7EB',
-                                                        padding: '0.75rem',
-                                                        borderRadius: '0.5rem',
-                                                        overflowX: 'auto',
-                                                        fontSize: '0.8em',
-                                                        margin: '0.5rem 0',
-                                                        fontFamily: 'monospace'
-                                                    }}>
-                                                        <code>{part}</code>
-                                                    </pre>
-                                                );
-                                            }
-                                            // Regular text with inline formatting
-                                            return (
-                                                <span key={i}>
-                                                    {part.split(/(\[Source: .*?\]|\*\*.*?\*\*)/g).map((subPart, j) => {
-                                                        if (subPart.startsWith('[Source:')) {
-                                                            const source = subPart.match(/\[Source: (.*?)\]/)?.[1];
-                                                            return (
-                                                                <span key={j} style={{
-                                                                    display: 'inline-block',
-                                                                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                                                                    color: '#059669',
-                                                                    border: '1px solid rgba(16, 185, 129, 0.2)',
-                                                                    borderRadius: '4px',
-                                                                    padding: '0 4px',
-                                                                    fontSize: '0.75em',
-                                                                    fontWeight: 600,
-                                                                    margin: '0 2px'
-                                                                }}>
-                                                                    📚 {source}
-                                                                </span>
-                                                            );
-                                                        }
-                                                        if (subPart.startsWith('**') && subPart.endsWith('**')) {
-                                                            return <strong key={j}>{subPart.slice(2, -2)}</strong>;
-                                                        }
-                                                        return subPart;
-                                                    })}
-                                                </span>
-                                            );
-                                        })}
+                                        <MathContent content={message.content} />
                                     </div>
                                     <p
                                         style={{

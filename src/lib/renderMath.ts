@@ -15,26 +15,44 @@ function renderKatex(tex: string, display: boolean): string {
             return katex.renderToString(tex, { displayMode: display, throwOnError: false });
         }
     } catch {
-        // katex not loaded yet — fall back to plain text
+        // katex not yet loaded
     }
-    return display ? `<div class="math-block">$$${escapeHtml(tex)}$$</div>` : `<span class="math-inline">$${escapeHtml(tex)}$</span>`;
+    const escaped = escapeHtml(tex);
+    return display
+        ? `<span class="math-fallback-display">$$${escaped}$$</span>`
+        : `<span class="math-fallback-inline">$${escaped}$</span>`;
 }
 
-/** Convert markdown-ish text with $...$ and $$...$$ into HTML with KaTeX. */
+/**
+ * Convert a full AI markdown response into safe HTML.
+ * Handles: $$...$$ display math, $...$ inline math, **bold**, *italic*,
+ * bullet lists (- / •), [Source: ...] badges, and plain line breaks.
+ * Code blocks (```...```) are left for the caller to handle separately.
+ */
 export function renderMath(text: string): string {
-    // Display math first ($$...$$)
+    // 1. Display math $$...$$
     let out = text.replace(/\$\$([\s\S]+?)\$\$/g, (_, tex) => renderKatex(tex.trim(), true));
-    // Inline math ($...$) — single $, not followed by another $
-    out = out.replace(/\$([^$\n]+?)\$/g, (_, tex) => renderKatex(tex.trim(), false));
-    // Basic markdown: **bold**, *italic*, bullet lines
-    out = out
-        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\*(.+?)\*/g, '<em>$1</em>')
-        .replace(/^[-•] (.+)$/gm, '<li>$1</li>')
-        .replace(/(<li>[\s\S]+?<\/li>)/g, '<ul>$1</ul>')
-        // Collapse consecutive </ul><ul>
-        .replace(/<\/ul>\s*<ul>/g, '')
-        // Line breaks
-        .replace(/\n/g, '<br/>');
+
+    // 2. Inline math $...$ (not $$, not empty)
+    out = out.replace(/(?<!\$)\$(?!\$)([^$\n]+?)\$(?!\$)/g, (_, tex) => renderKatex(tex.trim(), false));
+
+    // 3. Bold **text**
+    out = out.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+    // 4. Italic *text* (not already inside **)
+    out = out.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
+
+    // 5. Source badges [Source: ...]
+    out = out.replace(/\[Source:\s*([^\]]+)\]/g,
+        '<span class="ai-source-badge">📚 $1</span>');
+
+    // 6. Bullet lines (- item or • item)
+    out = out.replace(/^[\-•]\s+(.+)$/gm, '<li>$1</li>');
+    // Wrap consecutive <li> runs in <ul>
+    out = out.replace(/(<li>.*?<\/li>(\n|<br\/>)*)+/gs, (m) => `<ul>${m}</ul>`);
+
+    // 7. Line breaks
+    out = out.replace(/\n/g, '<br/>');
+
     return out;
 }

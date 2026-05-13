@@ -985,7 +985,7 @@
 .cd-doc-section {
     background: var(--gray-50);
     border: 1px solid var(--border);
-    border-left: 3px solid var(--primary-200);
+    border-left: 3px solid var(--border);
     border-radius: var(--radius-md);
     padding: 0.75rem 0.875rem;
     display: flex;
@@ -994,11 +994,11 @@
 }
 
 .cd-doc-section-title {
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     font-weight: 700;
-    color: var(--gray-500);
+    color: var(--gray-400);
     text-transform: uppercase;
-    letter-spacing: 0.07em;
+    letter-spacing: 0.08em;
 }
 
 .cd-doc-section-body {

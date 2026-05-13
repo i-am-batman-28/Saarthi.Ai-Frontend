@@ -1,0 +1,74 @@
+.math-content {
+    font-size: 0.875rem;
+    line-height: 1.7;
+    color: inherit;
+}
+
+.math-content strong { font-weight: 700; }
+.math-content em { font-style: italic; }
+
+.math-content ul {
+    margin: 0.35rem 0 0.35rem 1.1rem;
+    padding: 0;
+    list-style: disc;
+}
+.math-content li { margin-bottom: 0.15rem; }
+
+/* KaTeX display blocks */
+.math-content .katex-display {
+    margin: 0.6rem 0;
+    overflow-x: auto;
+}
+
+/* Fallback when KaTeX not yet loaded */
+.math-fallback-inline,
+.math-fallback-display {
+    font-family: 'Courier New', monospace;
+    font-size: 0.85em;
+    color: var(--gray-600);
+    background: var(--gray-100);
+    border-radius: 3px;
+    padding: 0 3px;
+}
+.math-fallback-display {
+    display: block;
+    text-align: center;
+    padding: 0.4rem;
+    margin: 0.4rem 0;
+}
+
+/* Source badge */
+.ai-source-badge {
+    display: inline-block;
+    background: rgba(16,185,129,0.1);
+    color: #059669;
+    border: 1px solid rgba(16,185,129,0.25);
+    border-radius: 4px;
+    font-size: 0.78rem;
+    padding: 1px 6px;
+    margin: 0 2px;
+    vertical-align: middle;
+}
+
+/* Code block */
+.math-code-block {
+    background: #1F2937;
+    color: #E5E7EB;
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    overflow-x: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 0.82em;
+    margin: 0.5rem 0;
+    white-space: pre;
+    position: relative;
+}
+.math-code-lang {
+    display: block;
+    font-size: 0.72em;
+    color: #9CA3AF;
+    margin-bottom: 0.4rem;
+    font-family: inherit;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
