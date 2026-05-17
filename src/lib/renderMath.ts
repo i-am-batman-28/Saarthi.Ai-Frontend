@@ -70,16 +70,28 @@ function stripArtifacts(text: string): string {
 export function renderMath(text: string): string {
     let out = stripArtifacts(text);
 
-    // 1. Display math  $$...$$
+    // 1a. \[...\] display math (LaTeX standard)
+    out = out.replace(/\\\[([\s\S]+?)\\\]/g, (_, tex) => renderKatex(tex.trim(), true));
+
+    // 1b. \(...\) inline math (LaTeX standard)
+    out = out.replace(/\\\((.+?)\\\)/g, (_, tex) => renderKatex(tex.trim(), false));
+
+    // 1c. \begin{...}...\end{...} environments (align*, equation, etc.)
+    out = out.replace(/\\begin\{([^}]+)\}([\s\S]+?)\\end\{\1\}/g, (_, env, body) =>
+        renderKatex(`\\begin{${env}}${body}\\end{${env}}`, true)
+    );
+
+    // 1d. Display math  $$...$$
     out = out.replace(/\$\$([\s\S]+?)\$\$/g, (_, tex) => renderKatex(tex.trim(), true));
 
     // 2. Inline math  $...$
     out = out.replace(/(?<!\$)\$(?!\$)([^$\n]+?)\$(?!\$)/g, (_, tex) => renderKatex(tex.trim(), false));
 
-    // 3. Headings  ### h3, ## h2, # h1
-    out = out.replace(/^###\s+(.+)$/gm, '<div class="ai-h3">$1</div>');
-    out = out.replace(/^##\s+(.+)$/gm,  '<div class="ai-h2">$1</div>');
-    out = out.replace(/^#\s+(.+)$/gm,   '<div class="ai-h1">$1</div>');
+    // 3. Headings  #### h4, ### h3, ## h2, # h1
+    out = out.replace(/^####\s+(.+)$/gm, '<div class="ai-h4">$1</div>');
+    out = out.replace(/^###\s+(.+)$/gm,  '<div class="ai-h3">$1</div>');
+    out = out.replace(/^##\s+(.+)$/gm,   '<div class="ai-h2">$1</div>');
+    out = out.replace(/^#\s+(.+)$/gm,    '<div class="ai-h1">$1</div>');
 
     // 4. Bold **text**
     out = out.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
@@ -117,8 +129,13 @@ export function renderMath(text: string): string {
     out = out.replace(/^[\-•]\s+(.+)$/gm, '<li>$1</li>');
     out = out.replace(/(<li>[\s\S]*?<\/li>)+/g, m => `<ul>${m}</ul>`);
 
-    // 11. Line breaks (skip if inside an HTML block already)
-    out = out.replace(/\n/g, '<br/>');
+    // 11. Line breaks — only replace \n that are outside HTML tags
+    // Split on HTML tags, replace \n only in text segments
+    out = out.split(/(<[^>]+>)/g).map((segment, i) => {
+        // Odd-indexed segments are HTML tags — leave them alone
+        if (i % 2 === 1) return segment;
+        return segment.replace(/\n/g, '<br/>');
+    }).join('');
 
     // 12. Clean up extra <br/> around block elements
     out = out.replace(/(<br\/>)+(<\/?div|<\/?ul|<\/?ol|<\/?li|<\/?table|<\/?tr|<\/?th|<\/?td)/g, '$2');

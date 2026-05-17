@@ -371,3 +371,34 @@ export async function listDatasets(): Promise<DatasetItem[]> {
   const result = await api.get<{ datasets: DatasetItem[] }>('/data/list');
   return result.datasets;
 }
+
+// ── Study Guides ─────────────────────────────────────────────────────────────
+
+export interface StudyGuidePromptItem {
+  id: number;
+  guide_id: number;
+  step_number: number;
+  title: string;
+  prompt_text: string;
+  created_at: string;
+}
+
+export interface StudyGuideItem {
+  id: number;
+  title: string;
+  description: string | null;
+  created_by: number | null;
+  created_at: string;
+  prompts: StudyGuidePromptItem[];
+}
+
+export const studyGuideApi = {
+  list: () => api.get<StudyGuideItem[]>('/study-guides'),
+  createGuide: (title: string, description?: string) =>
+    api.post<StudyGuideItem>('/study-guides', { title, description }),
+  deleteGuide: (id: number) => api.delete(`/study-guides/${id}`),
+  addPrompt: (guideId: number, title: string, prompt_text: string) =>
+    api.post<StudyGuidePromptItem>(`/study-guides/${guideId}/prompts`, { title, prompt_text }),
+  deletePrompt: (guideId: number, promptId: number) =>
+    api.delete(`/study-guides/${guideId}/prompts/${promptId}`),
+};

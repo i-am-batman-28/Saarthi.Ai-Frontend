@@ -37,7 +37,8 @@
 /* Headings rendered by renderMath */
 .math-content .ai-h1,
 .math-content .ai-h2,
-.math-content .ai-h3 {
+.math-content .ai-h3,
+.math-content .ai-h4 {
     font-weight: 600;
     color: var(--foreground);
     margin: 0.75rem 0 0.25rem;
@@ -46,6 +47,7 @@
 .math-content .ai-h1 { font-size: 1.05rem; }
 .math-content .ai-h2 { font-size: 0.975rem; }
 .math-content .ai-h3 { font-size: 0.9rem; }
+.math-content .ai-h4 { font-size: 0.85rem; }
 
 .math-content ul,
 .math-content ol {

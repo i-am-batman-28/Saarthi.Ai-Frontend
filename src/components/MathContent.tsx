@@ -52,9 +52,12 @@ export default function MathContent({ content, streaming }: Props) {
     // After streaming: useEffect above takes over with full KaTeX rendering
     if (streaming) {
         const plain = content
+            .replace(/\\\[([\s\S]+?)\\\]/g, (_, t) => t.trim())
+            .replace(/\\\((.+?)\\\)/g, (_, t) => t.trim())
+            .replace(/\\begin\{[^}]+\}[\s\S]+?\\end\{[^}]+\}/g, '[math]')
             .replace(/\$\$([\s\S]+?)\$\$/g, (_, t) => t.trim())
             .replace(/\$([^$\n]+?)\$/g, (_, t) => t.trim())
-            .replace(/#{1,3}\s+/g, '')
+            .replace(/#{1,4}\s+/g, '')
             .replace(/\*\*(.+?)\*\*/g, '$1');
         return (
             <div className="math-content" ref={containerRef}>

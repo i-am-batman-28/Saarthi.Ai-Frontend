@@ -461,3 +461,239 @@
         display: none;
     }
 }
+/* Citations */
+.chat-citations {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background: var(--bg-secondary, #f8f9fa);
+    border-left: 3px solid var(--primary, #4f46e5);
+    border-radius: 0 0.5rem 0.5rem 0;
+    font-size: 0.82rem;
+}
+.chat-citations-title {
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+    color: var(--text-muted, #6b7280);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.chat-citation-item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.35rem;
+    margin-bottom: 0.35rem;
+}
+.chat-citation-badge {
+    font-weight: 700;
+    color: var(--primary, #4f46e5);
+    font-size: 0.78rem;
+    min-width: 1.5rem;
+}
+.chat-citation-file {
+    font-weight: 500;
+    color: var(--text, #111827);
+}
+.chat-citation-snippet {
+    color: var(--text-muted, #6b7280);
+    font-style: italic;
+    font-size: 0.78rem;
+    width: 100%;
+    margin-left: 1.85rem;
+}
+
+/* Agent thinking (collapsible) */
+.chat-thinking {
+    margin-bottom: 0.5rem;
+    border: 1px solid var(--border, #e5e7eb);
+    border-radius: 0.5rem;
+    overflow: hidden;
+    font-size: 0.8rem;
+}
+.chat-thinking-title {
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text-muted, #6b7280);
+    background: var(--bg-secondary, #f8f9fa);
+    user-select: none;
+    list-style: none;
+}
+.chat-thinking-title::-webkit-details-marker { display: none; }
+.chat-thinking-body {
+    padding: 0.5rem 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.chat-thinking-step {
+    border-left: 2px solid var(--primary, #4f46e5);
+    padding-left: 0.6rem;
+}
+.chat-thinking-step-header {
+    font-weight: 600;
+    color: var(--primary, #4f46e5);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.2rem;
+}
+.chat-thinking-thought { color: var(--text, #111827); margin-bottom: 0.2rem; }
+.chat-thinking-tool { color: #7c3aed; font-family: monospace; font-size: 0.75rem; }
+.chat-thinking-obs { color: var(--text-muted, #6b7280); font-style: italic; font-size: 0.75rem; }
+
+/* Mode toggle */
+.chat-mode-toggle {
+    display: flex;
+    gap: 0.35rem;
+    margin-bottom: 0.5rem;
+}
+.chat-mode-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    border: 1px solid var(--border, #e5e7eb);
+    background: transparent;
+    color: var(--text-muted, #6b7280);
+    font-size: 0.78rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.chat-mode-btn:hover {
+    border-color: var(--primary, #4f46e5);
+    color: var(--primary, #4f46e5);
+}
+.chat-mode-btn.active {
+    background: var(--primary, #4f46e5);
+    border-color: var(--primary, #4f46e5);
+    color: #fff;
+}
+
+/* Dataset upload section */
+.chat-dataset-section {
+    margin-top: 1rem;
+    padding-top: 0.875rem;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.chat-dataset-header {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted, #6b7280);
+    margin-bottom: 0.5rem;
+}
+
+.chat-dataset-upload-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    width: 100%;
+    padding: 0.45rem 0.75rem;
+    border-radius: var(--radius, 0.5rem);
+    border: 1px dashed var(--border, #e5e7eb);
+    background: transparent;
+    color: var(--text-muted, #6b7280);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    box-sizing: border-box;
+}
+.chat-dataset-upload-btn:hover:not(.disabled) {
+    border-color: var(--primary, #4f46e5);
+    color: var(--primary, #4f46e5);
+}
+.chat-dataset-upload-btn.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.chat-dataset-error {
+    font-size: 0.75rem;
+    color: var(--danger, #ef4444);
+    margin: 0.3rem 0 0;
+}
+
+.chat-dataset-list {
+    list-style: none;
+    padding: 0;
+    margin: 0.4rem 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.chat-dataset-item {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+    color: var(--foreground);
+    background: var(--surface-1, #fff);
+    border: 1px solid var(--border);
+    border-radius: 0.35rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.chat-dataset-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.chat-dataset-size {
+    color: var(--text-muted, #6b7280);
+    font-size: 0.7rem;
+    flex-shrink: 0;
+}
+
+.chat-dataset-hint {
+    font-size: 0.7rem;
+    color: var(--text-muted, #6b7280);
+    margin: 0.35rem 0 0;
+}
+
+/* Study Guide topbar */
+.chat-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0.4rem 1rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-1);
+    flex-shrink: 0;
+}
+
+.chat-guide-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.78rem;
+    font-weight: 500;
+    padding: 0.3rem 0.75rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted, #6b7280);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.chat-guide-toggle:hover {
+    border-color: var(--primary, #4f46e5);
+    color: var(--primary, #4f46e5);
+}
+.chat-guide-toggle.active {
+    background: var(--primary, #4f46e5);
+    border-color: var(--primary, #4f46e5);
+    color: #fff;
+}
